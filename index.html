@@ -2253,1046 +2253,1529 @@
        JAVASCRIPT
   ========================================================= -->
 
-  <script>
+<script>
 
 
-    /* =========================================================
-       GOOGLE APPS SCRIPT URL
-       KEEP THIS URL UNCHANGED
-    ========================================================= */
+  /* =========================================================
+     GOOGLE APPS SCRIPT URL
+     KEEP THIS URL UNCHANGED
+  ========================================================= */
 
-    const GOOGLE_SCRIPT_URL =
-      "https://script.google.com/macros/s/AKfycbxTrlmmd9_jPml23c_UEZc10V1PYIeJo3Jkdt2zXBvvXG-r70uyLL5cHdVA36uZ0IqapQ/exec";
-
-
-    /* =========================================================
-       GLOBAL VARIABLES
-    ========================================================= */
-
-    let entries = [];
-
-    let currentType = "";
+  const GOOGLE_SCRIPT_URL =
+    "https://script.google.com/macros/s/AKfycbxTrlmmd9_jPml23c_UEZc10V1PYIeJo3Jkdt2zXBvvXG-r70uyLL5cHdVA36uZ0IqapQ/exec";
 
 
-    /* =========================================================
-       PAGE LOAD
-    ========================================================= */
+  /* =========================================================
+     GLOBAL VARIABLES
+  ========================================================= */
 
-    document.addEventListener(
-      "DOMContentLoaded",
-      function () {
+  let entries = [];
 
-
-        const today =
-          new Date();
+  let currentType = "";
 
 
-        const yyyy =
-          today.getFullYear();
+  /* =========================================================
+     PAGE LOAD
+  ========================================================= */
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    function () {
 
 
-        const mm =
-          String(
-            today.getMonth() + 1
-          ).padStart(2, "0");
+      const today =
+        new Date();
 
 
-        const dd =
-          String(
-            today.getDate()
-          ).padStart(2, "0");
+      const yyyy =
+        today.getFullYear();
 
 
-        const todayString =
-          `${yyyy}-${mm}-${dd}`;
+      const mm =
+        String(
+          today.getMonth() + 1
+        ).padStart(2, "0");
 
 
-        /* Entry Date */
-
-        document.getElementById(
-          "date"
-        ).value =
-          todayString;
+      const dd =
+        String(
+          today.getDate()
+        ).padStart(2, "0");
 
 
-        /* Report From Date */
-
-        document.getElementById(
-          "f-from"
-        ).value =
-          todayString;
+      const todayString =
+        `${yyyy}-${mm}-${dd}`;
 
 
-        /* Report To Date */
+      /* =====================================================
+         Entry Date
+         এখানে আজকের তারিখ থাকবে
+      ===================================================== */
 
-        document.getElementById(
-          "f-to"
-        ).value =
-          todayString;
+      document.getElementById(
+        "date"
+      ).value =
+        todayString;
 
 
-        /* Account Type initially blank */
+      /* =====================================================
+         Report From Date
+         Current Month-এর প্রথম দিন
+         Example: 01/09/2026
+      ===================================================== */
 
-        document.getElementById(
+      const firstDayOfMonth =
+        `${yyyy}-${mm}-01`;
+
+
+      /* =====================================================
+         Report To Date
+         Current Month-এর শেষ দিন
+         Example: 30/09/2026
+      ===================================================== */
+
+      const lastDayOfMonth =
+        new Date(
+          yyyy,
+          today.getMonth() + 1,
+          0
+        );
+
+
+      const lastDayString =
+        `${lastDayOfMonth.getFullYear()}-${String(
+          lastDayOfMonth.getMonth() + 1
+        ).padStart(2, "0")}-${String(
+          lastDayOfMonth.getDate()
+        ).padStart(2, "0")}`;
+
+
+      /* Report From Date */
+
+      document.getElementById(
+        "f-from"
+      ).value =
+        firstDayOfMonth;
+
+
+      /* Report To Date */
+
+      document.getElementById(
+        "f-to"
+      ).value =
+        lastDayString;
+
+
+      /* Account Type initially blank */
+
+      document.getElementById(
+        "type"
+      ).value = "";
+
+
+      currentType = "";
+
+
+      loadData();
+
+    }
+  );
+
+
+  /* =========================================================
+     LOAD DATA
+  ========================================================= */
+
+  async function loadData() {
+
+
+    try {
+
+
+      const response =
+        await fetch(
+          GOOGLE_SCRIPT_URL +
+          "?action=getAll"
+        );
+
+
+      const result =
+        await response.json();
+
+
+      if (!result.success) {
+
+        throw new Error(
+          result.message ||
+          "Data load failed"
+        );
+
+      }
+
+
+      entries =
+        Array.isArray(
+          result.data
+        )
+          ? result.data
+          : [];
+
+
+      renderToday();
+
+      renderReport();
+
+
+    } catch (error) {
+
+
+      console.error(
+        "Load Error:",
+        error
+      );
+
+
+      showMessage(
+        "ডাটা লোড করতে সমস্যা হয়েছে। Google Sheet/API চেক করুন।",
+        "error"
+      );
+
+    }
+
+  }
+
+
+  /* =========================================================
+     SET ACCOUNT TYPE
+  ========================================================= */
+
+  function setType(type) {
+
+
+    const normalized =
+      String(type || "")
+        .trim()
+        .toLowerCase();
+
+
+    if (
+      normalized === "income" ||
+      normalized === "expense"
+    ) {
+
+
+      currentType =
+        normalized;
+
+
+    } else {
+
+
+      currentType = "";
+
+    }
+
+  }
+
+
+  /* =========================================================
+     SAVE ENTRY
+  ========================================================= */
+
+  async function saveEntry(event) {
+
+
+    event.preventDefault();
+
+
+    const date =
+      document
+        .getElementById("date")
+        .value
+        .trim();
+
+
+    const description =
+      document
+        .getElementById("description")
+        .value
+        .trim();
+
+
+    const amount =
+      parseFloat(
+        document
+          .getElementById("amount")
+          .value
+      );
+
+
+    const remarks =
+      document
+        .getElementById("remarks")
+        .value
+        .trim();
+
+
+    const selectedType =
+      document
+        .getElementById("type")
+        .value;
+
+
+    const type =
+      String(
+        selectedType ||
+        currentType ||
+        ""
+      )
+        .trim()
+        .toLowerCase();
+
+
+    /* =====================================================
+       VALIDATION
+    ===================================================== */
+
+
+    if (!date) {
+
+
+      showMessage(
+        "তারিখ নির্বাচন করুন।",
+        "error"
+      );
+
+
+      document
+        .getElementById("date")
+        .focus();
+
+
+      return;
+
+    }
+
+
+    if (
+      type !== "income" &&
+      type !== "expense"
+    ) {
+
+
+      showMessage(
+        "দয়া করে হিসাবের ধরন নির্বাচন করুন — আয় অথবা খরচ।",
+        "error"
+      );
+
+
+      document
+        .getElementById("type")
+        .focus();
+
+
+      return;
+
+    }
+
+
+    if (!description) {
+
+
+      showMessage(
+        "বিবরণ লিখুন।",
+        "error"
+      );
+
+
+      document
+        .getElementById("description")
+        .focus();
+
+
+      return;
+
+    }
+
+
+    if (
+      isNaN(amount) ||
+      amount <= 0
+    ) {
+
+
+      showMessage(
+        "সঠিক টাকার পরিমাণ লিখুন।",
+        "error"
+      );
+
+
+      document
+        .getElementById("amount")
+        .focus();
+
+
+      return;
+
+    }
+
+
+    /* =====================================================
+       SAVE BUTTON
+    ===================================================== */
+
+    const saveBtn =
+      document.getElementById(
+        "saveBtn"
+      );
+
+
+    saveBtn.disabled = true;
+
+
+    saveBtn.innerHTML =
+      "⏳ সংরক্ষণ হচ্ছে...";
+
+
+    try {
+
+
+      const response =
+        await fetch(
+          GOOGLE_SCRIPT_URL,
+          {
+
+            method: "POST",
+
+            headers: {
+
+              "Content-Type":
+                "text/plain;charset=utf-8"
+
+            },
+
+            body:
+              JSON.stringify({
+
+                action: "save",
+
+                date: date,
+
+                type: type,
+
+                description:
+                  description,
+
+                amount: amount,
+
+                remarks: remarks
+
+              })
+
+          }
+        );
+
+
+      const result =
+        await response.json();
+
+
+      if (!result.success) {
+
+
+        throw new Error(
+          result.message ||
+          "Save failed"
+        );
+
+      }
+
+
+      showMessage(
+        "হিসাব সফলভাবে সংরক্ষণ হয়েছে।",
+        "success"
+      );
+
+
+      /* Clear fields */
+
+      document
+        .getElementById(
+          "description"
+        )
+        .value = "";
+
+
+      document
+        .getElementById(
+          "amount"
+        )
+        .value = "";
+
+
+      document
+        .getElementById(
+          "remarks"
+        )
+        .value = "";
+
+
+      /*
+        Type আবার blank করা হচ্ছে,
+        যাতে পরের Entry-তে অবশ্যই
+        নতুন করে আয়/খরচ নির্বাচন করতে হয়।
+      */
+
+      currentType = "";
+
+
+      document
+        .getElementById(
           "type"
-        ).value = "";
+        )
+        .value = "";
 
 
-        currentType = "";
+      /* Reload data */
+
+      await loadData();
 
 
-        loadData();
+    } catch (error) {
+
+
+      console.error(
+        "Save Error:",
+        error
+      );
+
+
+      showMessage(
+        error.message ||
+        "হিসাব সংরক্ষণ করতে সমস্যা হয়েছে।",
+        "error"
+      );
+
+
+    } finally {
+
+
+      saveBtn.disabled =
+        false;
+
+
+      saveBtn.innerHTML =
+        "💾 হিসাব সংরক্ষণ করুন";
+
+    }
+
+  }
+
+
+  /* =========================================================
+     DELETE ENTRY
+  ========================================================= */
+
+  async function deleteEntry(id) {
+
+
+    if (!id) {
+
+      return;
+
+    }
+
+
+    const confirmed =
+      confirm(
+        "আপনি কি এই হিসাবটি মুছে ফেলতে চান?"
+      );
+
+
+    if (!confirmed) {
+
+      return;
+
+    }
+
+
+    try {
+
+
+      const response =
+        await fetch(
+          GOOGLE_SCRIPT_URL,
+          {
+
+            method: "POST",
+
+            headers: {
+
+              "Content-Type":
+                "text/plain;charset=utf-8"
+
+            },
+
+            body:
+              JSON.stringify({
+
+                action: "delete",
+
+                id: id
+
+              })
+
+          }
+        );
+
+
+      const result =
+        await response.json();
+
+
+      if (!result.success) {
+
+
+        throw new Error(
+          result.message ||
+          "Delete failed"
+        );
+
+      }
+
+
+      showMessage(
+        "হিসাব সফলভাবে মুছে ফেলা হয়েছে।",
+        "success"
+      );
+
+
+      await loadData();
+
+
+    } catch (error) {
+
+
+      console.error(
+        "Delete Error:",
+        error
+      );
+
+
+      showMessage(
+        error.message ||
+        "হিসাব মুছতে সমস্যা হয়েছে।",
+        "error"
+      );
+
+    }
+
+  }
+
+
+  /* =========================================================
+     RENDER TODAY
+  ========================================================= */
+
+  function renderToday() {
+
+
+    const selectedDate =
+      document
+        .getElementById("date")
+        .value;
+
+
+    const todayEntries =
+      entries.filter(
+        function (item) {
+
+
+          return String(
+            item.Date ??
+            item.date ??
+            ""
+          )
+            .substring(0, 10)
+            === selectedDate;
+
+
+        }
+      );
+
+
+    let income = 0;
+
+    let expense = 0;
+
+
+    todayEntries.forEach(
+      function (item) {
+
+
+        const amount =
+          parseFloat(
+            item.Amount ??
+            item.amount ??
+            0
+          ) || 0;
+
+
+        const type =
+          String(
+            item.Type ??
+            item.type ??
+            ""
+          )
+            .trim()
+            .toLowerCase();
+
+
+        if (
+          type === "income"
+        ) {
+
+
+          income += amount;
+
+
+        }
+
+
+        else if (
+          type === "expense"
+        ) {
+
+
+          expense += amount;
+
+        }
+
 
       }
     );
 
 
-    /* =========================================================
-       LOAD DATA
-    ========================================================= */
-
-    async function loadData() {
+    const balance =
+      income - expense;
 
 
-      try {
+    document
+      .getElementById(
+        "todayIncome"
+      )
+      .textContent =
+      "৳ " +
+      formatMoney(income);
 
 
-        const response =
-          await fetch(
-            GOOGLE_SCRIPT_URL +
-            "?action=getAll"
-          );
+    document
+      .getElementById(
+        "todayExpense"
+      )
+      .textContent =
+      "৳ " +
+      formatMoney(expense);
 
 
-        const result =
-          await response.json();
+    document
+      .getElementById(
+        "todayBalance"
+      )
+      .textContent =
+      "৳ " +
+      formatMoney(balance);
 
 
-        if (!result.success) {
+    const tbody =
+      document.getElementById(
+        "todayBody"
+      );
 
-          throw new Error(
-            result.message ||
-            "Data load failed"
-          );
+
+    tbody.innerHTML = "";
+
+
+    if (
+      todayEntries.length === 0
+    ) {
+
+
+      tbody.innerHTML = `
+
+        <tr>
+
+          <td
+            colspan="6"
+            class="empty-row"
+          >
+
+            এই তারিখে কোনো হিসাব পাওয়া যায়নি।
+
+          </td>
+
+        </tr>
+
+      `;
+
+
+      return;
+
+    }
+
+
+    todayEntries
+      .slice()
+      .sort(
+        function (a, b) {
+
+
+          const aId =
+            Number(
+              a.Id ??
+              a.id ??
+              0
+            );
+
+
+          const bId =
+            Number(
+              b.Id ??
+              b.id ??
+              0
+            );
+
+
+          return bId - aId;
+
 
         }
-
-
-        entries =
-          Array.isArray(
-            result.data
-          )
-            ? result.data
-            : [];
-
-
-        renderToday();
-
-        renderReport();
-
-
-      } catch (error) {
-
-
-        console.error(
-          "Load Error:",
-          error
-        );
-
-
-        showMessage(
-          "ডাটা লোড করতে সমস্যা হয়েছে। Google Sheet/API চেক করুন।",
-          "error"
-        );
-
-      }
-
-    }
-
-
-    /* =========================================================
-       SET ACCOUNT TYPE
-    ========================================================= */
-
-    function setType(type) {
-
-
-      const normalized =
-        String(type || "")
-          .trim()
-          .toLowerCase();
-
-
-      if (
-        normalized === "income" ||
-        normalized === "expense"
-      ) {
-
-        currentType =
-          normalized;
-
-      } else {
-
-        currentType = "";
-
-      }
-
-    }
-
-
-    /* =========================================================
-       SAVE ENTRY
-    ========================================================= */
-
-    async function saveEntry(event) {
-
-
-      event.preventDefault();
-
-
-      const date =
-        document
-          .getElementById("date")
-          .value
-          .trim();
-
-
-      const description =
-        document
-          .getElementById("description")
-          .value
-          .trim();
-
-
-      const amount =
-        parseFloat(
-          document
-            .getElementById("amount")
-            .value
-        );
-
-
-      const remarks =
-        document
-          .getElementById("remarks")
-          .value
-          .trim();
-
-
-      const selectedType =
-        document
-          .getElementById("type")
-          .value;
-
-
-      const type =
-        String(
-          selectedType ||
-          currentType ||
-          ""
-        )
-          .trim()
-          .toLowerCase();
-
-
-      /* =====================================================
-         VALIDATION
-      ===================================================== */
-
-
-      if (!date) {
-
-        showMessage(
-          "তারিখ নির্বাচন করুন।",
-          "error"
-        );
-
-        document
-          .getElementById("date")
-          .focus();
-
-        return;
-
-      }
-
-
-      if (
-        type !== "income" &&
-        type !== "expense"
-      ) {
-
-
-        showMessage(
-          "দয়া করে হিসাবের ধরন নির্বাচন করুন — আয় অথবা খরচ।",
-          "error"
-        );
-
-
-        document
-          .getElementById("type")
-          .focus();
-
-
-        return;
-
-      }
-
-
-      if (!description) {
-
-        showMessage(
-          "বিবরণ লিখুন।",
-          "error"
-        );
-
-        document
-          .getElementById("description")
-          .focus();
-
-        return;
-
-      }
-
-
-      if (
-        isNaN(amount) ||
-        amount <= 0
-      ) {
-
-        showMessage(
-          "সঠিক টাকার পরিমাণ লিখুন।",
-          "error"
-        );
-
-        document
-          .getElementById("amount")
-          .focus();
-
-        return;
-
-      }
-
-
-      /* =====================================================
-         SAVE BUTTON
-      ===================================================== */
-
-      const saveBtn =
-        document.getElementById(
-          "saveBtn"
-        );
-
-
-      saveBtn.disabled = true;
-
-
-      saveBtn.innerHTML =
-        "⏳ সংরক্ষণ হচ্ছে...";
-
-
-      try {
-
-
-        const response =
-          await fetch(
-            GOOGLE_SCRIPT_URL,
-            {
-
-              method: "POST",
-
-              headers: {
-
-                "Content-Type":
-                  "text/plain;charset=utf-8"
-
-              },
-
-
-              body:
-                JSON.stringify({
-
-                  action: "save",
-
-                  date: date,
-
-                  type: type,
-
-                  description:
-                    description,
-
-                  amount: amount,
-
-                  remarks: remarks
-
-                })
-
-            }
-          );
-
-
-        const result =
-          await response.json();
-
-
-        if (!result.success) {
-
-          throw new Error(
-            result.message ||
-            "Save failed"
-          );
-
-        }
-
-
-        showMessage(
-          "হিসাব সফলভাবে সংরক্ষণ হয়েছে।",
-          "success"
-        );
-
-
-        /* Clear fields */
-
-        document
-          .getElementById(
-            "description"
-          )
-          .value = "";
-
-
-        document
-          .getElementById(
-            "amount"
-          )
-          .value = "";
-
-
-        document
-          .getElementById(
-            "remarks"
-          )
-          .value = "";
-
-
-        /*
-          Type আবার blank করা হচ্ছে,
-          যাতে পরের Entry-তে অবশ্যই
-          নতুন করে আয়/খরচ নির্বাচন করতে হয়।
-        */
-
-        currentType = "";
-
-
-        document
-          .getElementById(
-            "type"
-          )
-          .value = "";
-
-
-        /* Reload data */
-
-        await loadData();
-
-
-      } catch (error) {
-
-
-        console.error(
-          "Save Error:",
-          error
-        );
-
-
-        showMessage(
-          error.message ||
-          "হিসাব সংরক্ষণ করতে সমস্যা হয়েছে।",
-          "error"
-        );
-
-
-      } finally {
-
-
-        saveBtn.disabled =
-          false;
-
-
-        saveBtn.innerHTML =
-          "💾 হিসাব সংরক্ষণ করুন";
-
-      }
-
-    }
-
-
-    /* =========================================================
-       DELETE ENTRY
-    ========================================================= */
-
-    async function deleteEntry(id) {
-
-
-      if (!id) {
-        return;
-      }
-
-
-      const confirmed =
-        confirm(
-          "আপনি কি এই হিসাবটি মুছে ফেলতে চান?"
-        );
-
-
-      if (!confirmed) {
-        return;
-      }
-
-
-      try {
-
-
-        const response =
-          await fetch(
-            GOOGLE_SCRIPT_URL,
-            {
-
-              method: "POST",
-
-              headers: {
-
-                "Content-Type":
-                  "text/plain;charset=utf-8"
-
-              },
-
-
-              body:
-                JSON.stringify({
-
-                  action: "delete",
-
-                  id: id
-
-                })
-
-            }
-          );
-
-
-        const result =
-          await response.json();
-
-
-        if (!result.success) {
-
-          throw new Error(
-            result.message ||
-            "Delete failed"
-          );
-
-        }
-
-
-        showMessage(
-          "হিসাব সফলভাবে মুছে ফেলা হয়েছে।",
-          "success"
-        );
-
-
-        await loadData();
-
-
-      } catch (error) {
-
-
-        console.error(
-          "Delete Error:",
-          error
-        );
-
-
-        showMessage(
-          error.message ||
-          "হিসাব মুছতে সমস্যা হয়েছে।",
-          "error"
-        );
-
-      }
-
-    }
-
-
-    /* =========================================================
-       RENDER TODAY
-    ========================================================= */
-
-    function renderToday() {
-
-
-      const selectedDate =
-        document
-          .getElementById("date")
-          .value;
-
-
-      const todayEntries =
-        entries.filter(
-          function (item) {
-
-
-            return String(
-              item.Date ??
-              item.date ??
-              ""
-            )
-              .substring(0, 10)
-              === selectedDate;
-
-
-          }
-        );
-
-
-      let income = 0;
-
-      let expense = 0;
-
-
-      todayEntries.forEach(
+      )
+      .forEach(
         function (item) {
 
 
-          const amount =
-            parseFloat(
-              item.Amount ??
-              item.amount ??
-              0
-            ) || 0;
-
-
-          const type =
-            String(
-              item.Type ??
-              item.type ??
-              ""
-            )
-              .trim()
-              .toLowerCase();
-
-
-          if (
-            type === "income"
-          ) {
-
-            income += amount;
-
-          }
-
-
-          else if (
-            type === "expense"
-          ) {
-
-            expense += amount;
-
-          }
+          tbody.appendChild(
+            createTableRow(item)
+          );
 
 
         }
       );
 
-
-      const balance =
-        income - expense;
+  }
 
 
+  /* =========================================================
+     RENDER DATE RANGE REPORT
+  ========================================================= */
+
+  function renderReport() {
+
+
+    const fromDate =
       document
         .getElementById(
-          "todayIncome"
+          "f-from"
         )
-        .textContent =
-        "৳ " +
-        formatMoney(income);
+        .value;
 
 
+    const toDate =
       document
         .getElementById(
-          "todayExpense"
+          "f-to"
         )
-        .textContent =
-        "৳ " +
-        formatMoney(expense);
+        .value;
 
 
-      document
-        .getElementById(
-          "todayBalance"
-        )
-        .textContent =
-        "৳ " +
-        formatMoney(balance);
-
-
-      const tbody =
-        document.getElementById(
-          "todayBody"
-        );
-
-
-      tbody.innerHTML = "";
-
-
-      if (
-        todayEntries.length === 0
-      ) {
-
-
-        tbody.innerHTML = `
-
-          <tr>
-
-            <td
-              colspan="6"
-              class="empty-row"
-            >
-
-              এই তারিখে কোনো হিসাব পাওয়া যায়নি।
-
-            </td>
-
-          </tr>
-
-        `;
-
-
-        return;
-
-      }
-
-
-      todayEntries
-        .slice()
-        .sort(
-          function (a, b) {
-
-
-            const aId =
-              Number(
-                a.Id ??
-                a.id ??
-                0
-              );
-
-
-            const bId =
-              Number(
-                b.Id ??
-                b.id ??
-                0
-              );
-
-
-            return bId - aId;
-
-          }
-        )
-        .forEach(
-          function (item) {
-
-
-            tbody.appendChild(
-              createTableRow(item)
-            );
-
-          }
-        );
-
-    }
-
-
-    /* =========================================================
-       RENDER DATE RANGE REPORT
-    ========================================================= */
-
-    function renderReport() {
-
-
-      const fromDate =
-        document
-          .getElementById(
-            "f-from"
-          )
-          .value;
-
-
-      const toDate =
-        document
-          .getElementById(
-            "f-to"
-          )
-          .value;
-
-
-      const fromText =
-        document.getElementById(
-          "reportFromText"
-        );
-
-
-      const toText =
-        document.getElementById(
-          "reportToText"
-        );
-
-
-      fromText.textContent =
-        fromDate
-          ? formatDate(fromDate)
-          : "-";
-
-
-      toText.textContent =
-        toDate
-          ? formatDate(toDate)
-          : "-";
-
-
-      const tbody =
-        document.getElementById(
-          "reportBody"
-        );
-
-
-      tbody.innerHTML = "";
-
-
-      /* No date */
-
-      if (
-        !fromDate ||
-        !toDate
-      ) {
-
-
-        document.getElementById(
-          "reportIncome"
-        ).textContent = "৳ 0";
-
-
-        document.getElementById(
-          "reportExpense"
-        ).textContent = "৳ 0";
-
-
-        document.getElementById(
-          "reportBalance"
-        ).textContent = "৳ 0";
-
-
-        tbody.innerHTML = `
-
-          <tr>
-
-            <td
-              colspan="6"
-              class="empty-row"
-            >
-
-              From Date এবং To Date নির্বাচন করুন।
-
-            </td>
-
-          </tr>
-
-        `;
-
-
-        return;
-
-      }
-
-
-      /* Invalid range */
-
-      if (
-        fromDate > toDate
-      ) {
-
-
-        document.getElementById(
-          "reportIncome"
-        ).textContent = "৳ 0";
-
-
-        document.getElementById(
-          "reportExpense"
-        ).textContent = "৳ 0";
-
-
-        document.getElementById(
-          "reportBalance"
-        ).textContent = "৳ 0";
-
-
-        tbody.innerHTML = `
-
-          <tr>
-
-            <td
-              colspan="6"
-              class="empty-row"
-            >
-
-              From Date অবশ্যই To Date-এর সমান অথবা আগের তারিখ হতে হবে।
-
-            </td>
-
-          </tr>
-
-        `;
-
-
-        return;
-
-      }
-
-
-      /* =====================================================
-         FILTER
-      ===================================================== */
-
-      const rangeEntries =
-        entries.filter(
-          function (item) {
-
-
-            const date =
-              String(
-                item.Date ??
-                item.date ??
-                ""
-              )
-                .substring(0, 10);
-
-
-            return (
-              date >= fromDate &&
-              date <= toDate
-            );
-
-          }
-        );
-
-
-      let income = 0;
-
-      let expense = 0;
-
-
-      rangeEntries.forEach(
-        function (item) {
-
-
-          const amount =
-            parseFloat(
-              item.Amount ??
-              item.amount ??
-              0
-            ) || 0;
-
-
-          const type =
-            String(
-              item.Type ??
-              item.type ??
-              ""
-            )
-              .trim()
-              .toLowerCase();
-
-
-          if (
-            type === "income"
-          ) {
-
-            income += amount;
-
-          }
-
-
-          else if (
-            type === "expense"
-          ) {
-
-            expense += amount;
-
-          }
-
-        }
+    const fromText =
+      document.getElementById(
+        "reportFromText"
       );
 
 
-      const balance =
-        income - expense;
+    const toText =
+      document.getElementById(
+        "reportToText"
+      );
 
 
-      /* Summary */
+    fromText.textContent =
+      fromDate
+        ? formatDate(fromDate)
+        : "-";
+
+
+    toText.textContent =
+      toDate
+        ? formatDate(toDate)
+        : "-";
+
+
+    const tbody =
+      document.getElementById(
+        "reportBody"
+      );
+
+
+    tbody.innerHTML = "";
+
+
+    /* No date */
+
+    if (
+      !fromDate ||
+      !toDate
+    ) {
+
 
       document.getElementById(
         "reportIncome"
-      ).textContent =
-        "৳ " +
-        formatMoney(income);
+      ).textContent = "৳ 0";
 
 
       document.getElementById(
         "reportExpense"
-      ).textContent =
-        "৳ " +
-        formatMoney(expense);
+      ).textContent = "৳ 0";
 
 
       document.getElementById(
         "reportBalance"
-      ).textContent =
-        "৳ " +
-        formatMoney(balance);
+      ).textContent = "৳ 0";
 
 
-      /* No data */
+      tbody.innerHTML = `
 
-      if (
-        rangeEntries.length === 0
-      ) {
+        <tr>
 
+          <td
+            colspan="6"
+            class="empty-row"
+          >
 
-        tbody.innerHTML = `
+            From Date এবং To Date নির্বাচন করুন।
 
-          <tr>
+          </td>
 
-            <td
-              colspan="6"
-              class="empty-row"
-            >
+        </tr>
 
-              নির্বাচিত তারিখের মধ্যে কোনো হিসাব পাওয়া যায়নি।
-
-            </td>
-
-          </tr>
-
-        `;
+      `;
 
 
-        return;
+      return;
+
+    }
+
+
+    /* Invalid range */
+
+    if (
+      fromDate > toDate
+    ) {
+
+
+      document.getElementById(
+        "reportIncome"
+      ).textContent = "৳ 0";
+
+
+      document.getElementById(
+        "reportExpense"
+      ).textContent = "৳ 0";
+
+
+      document.getElementById(
+        "reportBalance"
+      ).textContent = "৳ 0";
+
+
+      tbody.innerHTML = `
+
+        <tr>
+
+          <td
+            colspan="6"
+            class="empty-row"
+          >
+
+            From Date অবশ্যই To Date-এর সমান অথবা আগের তারিখ হতে হবে।
+
+          </td>
+
+        </tr>
+
+      `;
+
+
+      return;
+
+    }
+
+
+    /* =====================================================
+       FILTER
+    ===================================================== */
+
+    const rangeEntries =
+      entries.filter(
+        function (item) {
+
+
+          const date =
+            String(
+              item.Date ??
+              item.date ??
+              ""
+            )
+              .substring(0, 10);
+
+
+          return (
+            date >= fromDate &&
+            date <= toDate
+          );
+
+
+        }
+      );
+
+
+    let income = 0;
+
+    let expense = 0;
+
+
+    rangeEntries.forEach(
+      function (item) {
+
+
+        const amount =
+          parseFloat(
+            item.Amount ??
+            item.amount ??
+            0
+          ) || 0;
+
+
+        const type =
+          String(
+            item.Type ??
+            item.type ??
+            ""
+          )
+            .trim()
+            .toLowerCase();
+
+
+        if (
+          type === "income"
+        ) {
+
+
+          income += amount;
+
+
+        }
+
+
+        else if (
+          type === "expense"
+        ) {
+
+
+          expense += amount;
+
+        }
+
 
       }
+    );
 
 
-      /* =====================================================
-         SORT
-      ===================================================== */
+    const balance =
+      income - expense;
 
+
+    /* Summary */
+
+    document.getElementById(
+      "reportIncome"
+    ).textContent =
+      "৳ " +
+      formatMoney(income);
+
+
+    document.getElementById(
+      "reportExpense"
+    ).textContent =
+      "৳ " +
+      formatMoney(expense);
+
+
+    document.getElementById(
+      "reportBalance"
+    ).textContent =
+      "৳ " +
+      formatMoney(balance);
+
+
+    /* No data */
+
+    if (
+      rangeEntries.length === 0
+    ) {
+
+
+      tbody.innerHTML = `
+
+        <tr>
+
+          <td
+            colspan="6"
+            class="empty-row"
+          >
+
+            নির্বাচিত তারিখের মধ্যে কোনো হিসাব পাওয়া যায়নি।
+
+          </td>
+
+        </tr>
+
+      `;
+
+
+      return;
+
+    }
+
+
+    /* =====================================================
+       SORT
+    ===================================================== */
+
+    rangeEntries
+      .slice()
+      .sort(
+        function (a, b) {
+
+
+          const dateA =
+            String(
+              a.Date ??
+              a.date ??
+              ""
+            );
+
+
+          const dateB =
+            String(
+              b.Date ??
+              b.date ??
+              ""
+            );
+
+
+          if (
+            dateA !== dateB
+          ) {
+
+
+            return dateB
+              .localeCompare(
+                dateA
+              );
+
+          }
+
+
+          const idA =
+            Number(
+              a.Id ??
+              a.id ??
+              0
+            );
+
+
+          const idB =
+            Number(
+              b.Id ??
+              b.id ??
+              0
+            );
+
+
+          return idB - idA;
+
+
+        }
+      )
+      .forEach(
+        function (item) {
+
+
+          tbody.appendChild(
+            createTableRow(item)
+          );
+
+
+        }
+      );
+
+  }
+
+
+  /* =========================================================
+     CREATE TABLE ROW
+  ========================================================= */
+
+  function createTableRow(item) {
+
+
+    const tr =
+      document.createElement(
+        "tr"
+      );
+
+
+    const id =
+      item.Id ??
+      item.id ??
+      "";
+
+
+    const date =
+      item.Date ??
+      item.date ??
+      "";
+
+
+    const description =
+      item.Description ??
+      item.description ??
+      "";
+
+
+    const type =
+      String(
+        item.Type ??
+        item.type ??
+        ""
+      )
+        .trim()
+        .toLowerCase();
+
+
+    const amount =
+      parseFloat(
+        item.Amount ??
+        item.amount ??
+        0
+      ) || 0;
+
+
+    const remarks =
+      item.Remarks ??
+      item.remarks ??
+      "";
+
+
+    const typeText =
+      type === "income"
+        ? "আয়"
+        : "খরচ";
+
+
+    const amountClass =
+      type === "income"
+        ? "amount-income"
+        : "amount-expense";
+
+
+    const sign =
+      type === "income"
+        ? "+"
+        : "-";
+
+
+    const badgeClass =
+      type === "income"
+        ? "income"
+        : "expense";
+
+
+    tr.innerHTML = `
+
+      <td>
+        ${escapeHtml(
+          formatDate(date)
+        )}
+      </td>
+
+
+      <td>
+
+        <strong>
+          ${escapeHtml(
+            description
+          )}
+        </strong>
+
+      </td>
+
+
+      <td>
+
+        <span
+          class="type-badge ${badgeClass}"
+        >
+          ${typeText}
+        </span>
+
+      </td>
+
+
+      <td
+        class="amount-cell ${amountClass}"
+      >
+
+        ${sign}
+        ৳
+        ${formatMoney(amount)}
+
+      </td>
+
+
+      <td>
+
+        ${escapeHtml(
+          remarks || "-"
+        )}
+
+      </td>
+
+
+      <td
+        style="text-align:center;"
+      >
+
+        <button
+          type="button"
+          class="delete-btn"
+          onclick="deleteEntry('${escapeHtml(
+            String(id)
+          )}')"
+          title="হিসাব মুছে ফেলুন"
+        >
+
+          🗑
+
+        </button>
+
+      </td>
+
+    `;
+
+
+    return tr;
+
+  }
+
+
+  /* =========================================================
+     SHOW TAB
+  ========================================================= */
+
+  function showTab(tab) {
+
+
+    const newTab =
+      document.getElementById(
+        "newTab"
+      );
+
+
+    const reportTab =
+      document.getElementById(
+        "reportTab"
+      );
+
+
+    const tabNew =
+      document.getElementById(
+        "tabNew"
+      );
+
+
+    const tabReport =
+      document.getElementById(
+        "tabReport"
+      );
+
+
+    if (
+      tab === "new"
+    ) {
+
+
+      newTab.classList.add(
+        "active"
+      );
+
+
+      reportTab.classList.remove(
+        "active"
+      );
+
+
+      tabNew.classList.add(
+        "active"
+      );
+
+
+      tabReport.classList.remove(
+        "active"
+      );
+
+
+      renderToday();
+
+
+    } else {
+
+
+      newTab.classList.remove(
+        "active"
+      );
+
+
+      reportTab.classList.add(
+        "active"
+      );
+
+
+      tabNew.classList.remove(
+        "active"
+      );
+
+
+      tabReport.classList.add(
+        "active"
+      );
+
+
+      renderReport();
+
+    }
+
+  }
+
+
+  /* =========================================================
+     EXPORT EXCEL - DATE RANGE
+  ========================================================= */
+
+  function exportExcel() {
+
+
+    const fromDate =
+      document
+        .getElementById(
+          "f-from"
+        )
+        .value;
+
+
+    const toDate =
+      document
+        .getElementById(
+          "f-to"
+        )
+        .value;
+
+
+    /* Validation */
+
+    if (
+      !fromDate ||
+      !toDate
+    ) {
+
+
+      showMessage(
+        "Excel ডাউনলোডের জন্য From Date এবং To Date নির্বাচন করুন।",
+        "error"
+      );
+
+
+      return;
+
+    }
+
+
+    if (
+      fromDate > toDate
+    ) {
+
+
+      showMessage(
+        "From Date অবশ্যই To Date-এর সমান অথবা আগের তারিখ হতে হবে।",
+        "error"
+      );
+
+
+      return;
+
+    }
+
+
+    /* Filter */
+
+    const rangeEntries =
+      entries.filter(
+        function (item) {
+
+
+          const date =
+            String(
+              item.Date ??
+              item.date ??
+              ""
+            )
+              .substring(0, 10);
+
+
+          return (
+            date >= fromDate &&
+            date <= toDate
+          );
+
+
+        }
+      );
+
+
+    if (
+      rangeEntries.length === 0
+    ) {
+
+
+      showMessage(
+        "নির্বাচিত তারিখের মধ্যে Excel ডাউনলোড করার মতো কোনো ডাটা নেই।",
+        "error"
+      );
+
+
+      return;
+
+    }
+
+
+    /* =====================================================
+       EXCEL DATA
+    ===================================================== */
+
+    const data =
       rangeEntries
         .slice()
         .sort(
@@ -3315,714 +3798,300 @@
               );
 
 
-            if (
-              dateA !== dateB
-            ) {
+            return dateA.localeCompare(
+              dateB
+            );
 
-              return dateB
-                .localeCompare(
-                  dateA
-                );
-
-            }
-
-
-            const idA =
-              Number(
-                a.Id ??
-                a.id ??
-                0
-              );
-
-
-            const idB =
-              Number(
-                b.Id ??
-                b.id ??
-                0
-              );
-
-
-            return idB - idA;
 
           }
         )
-        .forEach(
+        .map(
           function (item) {
 
 
-            tbody.appendChild(
-              createTableRow(item)
-            );
+            const type =
+              String(
+                item.Type ??
+                item.type ??
+                ""
+              )
+                .trim()
+                .toLowerCase();
+
+
+            return {
+
+
+              "তারিখ":
+                item.Date ??
+                item.date ??
+                "",
+
+
+              "বিবরণ":
+                item.Description ??
+                item.description ??
+                "",
+
+
+              "হিসাবের ধরন":
+                type === "income"
+                  ? "আয়"
+                  : "খরচ",
+
+
+              "পরিমাণ":
+                parseFloat(
+                  item.Amount ??
+                  item.amount ??
+                  0
+                ) || 0,
+
+
+              "মন্তব্য":
+                item.Remarks ??
+                item.remarks ??
+                "",
+
+
+              "Entry ID":
+                item.Id ??
+                item.id ??
+                ""
+
+            };
+
 
           }
         );
 
-    }
+
+    /* =====================================================
+       CREATE WORKSHEET
+    ===================================================== */
+
+    const worksheet =
+      XLSX.utils.json_to_sheet(
+        data
+      );
 
 
-    /* =========================================================
-       CREATE TABLE ROW
-    ========================================================= */
+    worksheet["!cols"] = [
 
-    function createTableRow(item) {
+      { wch: 14 },
 
+      { wch: 32 },
 
-      const tr =
-        document.createElement(
-          "tr"
-        );
+      { wch: 18 },
 
+      { wch: 16 },
 
-      const id =
-        item.Id ??
-        item.id ??
-        "";
+      { wch: 35 },
+
+      { wch: 12 }
+
+    ];
 
 
-      const date =
-        item.Date ??
-        item.date ??
-        "";
+    const workbook =
+      XLSX.utils.book_new();
 
 
-      const description =
-        item.Description ??
-        item.description ??
-        "";
+    XLSX.utils.book_append_sheet(
+      workbook,
+      worksheet,
+      "হিসাব"
+    );
 
 
-      const type =
-        String(
-          item.Type ??
-          item.type ??
-          ""
-        )
-          .trim()
-          .toLowerCase();
+    /* =====================================================
+       FILE NAME
+    ===================================================== */
+
+    const fileName =
+      `Daily_Hisab_${fromDate}_to_${toDate}.xlsx`;
 
 
-      const amount =
-        parseFloat(
-          item.Amount ??
-          item.amount ??
-          0
-        ) || 0;
+    XLSX.writeFile(
+      workbook,
+      fileName
+    );
+
+  }
 
 
-      const remarks =
-        item.Remarks ??
-        item.remarks ??
-        "";
+  /* =========================================================
+     FORMAT MONEY
+  ========================================================= */
+
+  function formatMoney(value) {
 
 
-      const typeText =
-        type === "income"
-          ? "আয়"
-          : "খরচ";
+    const number =
+      Number(value) || 0;
 
 
-      const amountClass =
-        type === "income"
-          ? "amount-income"
-          : "amount-expense";
+    return number.toLocaleString(
+      "en-US",
+      {
+
+        minimumFractionDigits: 0,
+
+        maximumFractionDigits: 2
+
+      }
+    );
+
+  }
 
 
-      const sign =
-        type === "income"
-          ? "+"
-          : "-";
+  /* =========================================================
+     FORMAT DATE
+  ========================================================= */
+
+  function formatDate(value) {
 
 
-      const badgeClass =
-        type === "income"
-          ? "income"
-          : "expense";
+    if (!value) {
 
-
-      tr.innerHTML = `
-
-        <td>
-          ${escapeHtml(
-            formatDate(date)
-          )}
-        </td>
-
-
-        <td>
-
-          <strong>
-            ${escapeHtml(
-              description
-            )}
-          </strong>
-
-        </td>
-
-
-        <td>
-
-          <span
-            class="type-badge ${badgeClass}"
-          >
-            ${typeText}
-          </span>
-
-        </td>
-
-
-        <td
-          class="amount-cell ${amountClass}"
-        >
-
-          ${sign}
-          ৳
-          ${formatMoney(amount)}
-
-        </td>
-
-
-        <td>
-
-          ${escapeHtml(
-            remarks || "-"
-          )}
-
-        </td>
-
-
-        <td
-          style="text-align:center;"
-        >
-
-          <button
-            type="button"
-            class="delete-btn"
-            onclick="deleteEntry('${escapeHtml(
-              String(id)
-            )}')"
-            title="হিসাব মুছে ফেলুন"
-          >
-
-            🗑
-
-          </button>
-
-        </td>
-
-      `;
-
-
-      return tr;
+      return "";
 
     }
 
 
-    /* =========================================================
-       SHOW TAB
-    ========================================================= */
-
-    function showTab(tab) {
+    const str =
+      String(value);
 
 
-      const newTab =
-        document.getElementById(
-          "newTab"
-        );
+    if (
+      /^\d{4}-\d{2}-\d{2}/
+        .test(str)
+    ) {
 
 
-      const reportTab =
-        document.getElementById(
-          "reportTab"
-        );
+      const parts =
+        str
+          .substring(0, 10)
+          .split("-");
 
 
-      const tabNew =
-        document.getElementById(
-          "tabNew"
-        );
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+
+    }
 
 
-      const tabReport =
-        document.getElementById(
-          "tabReport"
-        );
+    return str;
+
+  }
 
 
-      if (
-        tab === "new"
-      ) {
+  /* =========================================================
+     MESSAGE
+  ========================================================= */
+
+  function showMessage(
+    text,
+    type = "success"
+  ) {
 
 
-        newTab.classList.add(
-          "active"
-        );
+    const message =
+      document.getElementById(
+        "message"
+      );
 
 
-        reportTab.classList.remove(
-          "active"
-        );
+    message.textContent =
+      text;
 
 
-        tabNew.classList.add(
-          "active"
-        );
+    message.className =
+      type;
 
 
-        tabReport.classList.remove(
-          "active"
-        );
+    message.style.display =
+      "block";
+
+
+    clearTimeout(
+      window.messageTimer
+    );
+
+
+    window.messageTimer =
+      setTimeout(
+        function () {
+
+
+          message.style.display =
+            "none";
+
+
+        },
+        4000
+      );
+
+  }
+
+
+  /* =========================================================
+     ESCAPE HTML
+  ========================================================= */
+
+  function escapeHtml(value) {
+
+
+    return String(
+      value ?? ""
+    )
+
+      .replace(
+        /&/g,
+        "&amp;"
+      )
+
+      .replace(
+        /</g,
+        "&lt;"
+      )
+
+      .replace(
+        />/g,
+        "&gt;"
+      )
+
+      .replace(
+        /"/g,
+        "&quot;"
+      )
+
+      .replace(
+        /'/g,
+        "&#039;"
+      );
+
+  }
+
+
+  /* =========================================================
+     DATE CHANGE
+  ========================================================= */
+
+  document
+    .getElementById("date")
+    .addEventListener(
+      "change",
+      function () {
 
 
         renderToday();
 
 
-      } else {
-
-
-        newTab.classList.remove(
-          "active"
-        );
-
-
-        reportTab.classList.add(
-          "active"
-        );
-
-
-        tabNew.classList.remove(
-          "active"
-        );
-
-
-        tabReport.classList.add(
-          "active"
-        );
-
-
-        renderReport();
-
       }
+    );
 
-    }
 
-
-    /* =========================================================
-       EXPORT EXCEL - DATE RANGE
-    ========================================================= */
-
-    function exportExcel() {
-
-
-      const fromDate =
-        document
-          .getElementById(
-            "f-from"
-          )
-          .value;
-
-
-      const toDate =
-        document
-          .getElementById(
-            "f-to"
-          )
-          .value;
-
-
-      /* Validation */
-
-      if (
-        !fromDate ||
-        !toDate
-      ) {
-
-
-        showMessage(
-          "Excel ডাউনলোডের জন্য From Date এবং To Date নির্বাচন করুন।",
-          "error"
-        );
-
-
-        return;
-
-      }
-
-
-      if (
-        fromDate > toDate
-      ) {
-
-
-        showMessage(
-          "From Date অবশ্যই To Date-এর সমান অথবা আগের তারিখ হতে হবে।",
-          "error"
-        );
-
-
-        return;
-
-      }
-
-
-      /* Filter */
-
-      const rangeEntries =
-        entries.filter(
-          function (item) {
-
-
-            const date =
-              String(
-                item.Date ??
-                item.date ??
-                ""
-              )
-                .substring(0, 10);
-
-
-            return (
-              date >= fromDate &&
-              date <= toDate
-            );
-
-          }
-        );
-
-
-      if (
-        rangeEntries.length === 0
-      ) {
-
-
-        showMessage(
-          "নির্বাচিত তারিখের মধ্যে Excel ডাউনলোড করার মতো কোনো ডাটা নেই।",
-          "error"
-        );
-
-
-        return;
-
-      }
-
-
-      /* =====================================================
-         EXCEL DATA
-      ===================================================== */
-
-      const data =
-        rangeEntries
-          .slice()
-          .sort(
-            function (a, b) {
-
-
-              const dateA =
-                String(
-                  a.Date ??
-                  a.date ??
-                  ""
-                );
-
-
-              const dateB =
-                String(
-                  b.Date ??
-                  b.date ??
-                  ""
-                );
-
-
-              return dateA.localeCompare(
-                dateB
-              );
-
-            }
-          )
-          .map(
-            function (item) {
-
-
-              const type =
-                String(
-                  item.Type ??
-                  item.type ??
-                  ""
-                )
-                  .trim()
-                  .toLowerCase();
-
-
-              return {
-
-
-                "তারিখ":
-                  item.Date ??
-                  item.date ??
-                  "",
-
-
-                "বিবরণ":
-                  item.Description ??
-                  item.description ??
-                  "",
-
-
-                "হিসাবের ধরন":
-                  type === "income"
-                    ? "আয়"
-                    : "খরচ",
-
-
-                "পরিমাণ":
-                  parseFloat(
-                    item.Amount ??
-                    item.amount ??
-                    0
-                  ) || 0,
-
-
-                "মন্তব্য":
-                  item.Remarks ??
-                  item.remarks ??
-                  "",
-
-
-                "Entry ID":
-                  item.Id ??
-                  item.id ??
-                  ""
-
-              };
-
-            }
-          );
-
-
-      /* =====================================================
-         CREATE WORKSHEET
-      ===================================================== */
-
-      const worksheet =
-        XLSX.utils.json_to_sheet(
-          data
-        );
-
-
-      worksheet["!cols"] = [
-
-        { wch: 14 },
-
-        { wch: 32 },
-
-        { wch: 18 },
-
-        { wch: 16 },
-
-        { wch: 35 },
-
-        { wch: 12 }
-
-      ];
-
-
-      const workbook =
-        XLSX.utils.book_new();
-
-
-      XLSX.utils.book_append_sheet(
-        workbook,
-        worksheet,
-        "হিসাব"
-      );
-
-
-      /* =====================================================
-         FILE NAME
-      ===================================================== */
-
-      const fileName =
-        `Daily_Hisab_${fromDate}_to_${toDate}.xlsx`;
-
-
-      XLSX.writeFile(
-        workbook,
-        fileName
-      );
-
-
-    }
-
-
-    /* =========================================================
-       FORMAT MONEY
-    ========================================================= */
-
-    function formatMoney(value) {
-
-
-      const number =
-        Number(value) || 0;
-
-
-      return number.toLocaleString(
-        "en-US",
-        {
-
-          minimumFractionDigits: 0,
-
-          maximumFractionDigits: 2
-
-        }
-      );
-
-    }
-
-
-    /* =========================================================
-       FORMAT DATE
-    ========================================================= */
-
-    function formatDate(value) {
-
-
-      if (!value) {
-        return "";
-      }
-
-
-      const str =
-        String(value);
-
-
-      if (
-        /^\d{4}-\d{2}-\d{2}/
-          .test(str)
-      ) {
-
-
-        const parts =
-          str
-            .substring(0, 10)
-            .split("-");
-
-
-        return `${parts[2]}-${parts[1]}-${parts[0]}`;
-
-      }
-
-
-      return str;
-
-    }
-
-
-    /* =========================================================
-       MESSAGE
-    ========================================================= */
-
-    function showMessage(
-      text,
-      type = "success"
-    ) {
-
-
-      const message =
-        document.getElementById(
-          "message"
-        );
-
-
-      message.textContent =
-        text;
-
-
-      message.className =
-        type;
-
-
-      message.style.display =
-        "block";
-
-
-      clearTimeout(
-        window.messageTimer
-      );
-
-
-      window.messageTimer =
-        setTimeout(
-          function () {
-
-
-            message.style.display =
-              "none";
-
-
-          },
-          4000
-        );
-
-    }
-
-
-    /* =========================================================
-       ESCAPE HTML
-    ========================================================= */
-
-    function escapeHtml(value) {
-
-
-      return String(
-        value ?? ""
-      )
-
-        .replace(
-          /&/g,
-          "&amp;"
-        )
-
-        .replace(
-          /</g,
-          "&lt;"
-        )
-
-        .replace(
-          />/g,
-          "&gt;"
-        )
-
-        .replace(
-          /"/g,
-          "&quot;"
-        )
-
-        .replace(
-          /'/g,
-          "&#039;"
-        );
-
-    }
-
-
-    /* =========================================================
-       DATE CHANGE
-    ========================================================= */
-
-    document
-      .getElementById("date")
-      .addEventListener(
-        "change",
-        function () {
-
-          renderToday();
-
-        }
-      );
-
-
-  </script>
-
+</script>
 </body>
 </html>
 
