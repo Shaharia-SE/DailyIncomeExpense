@@ -1,0 +1,4028 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>দৈনিক হিসাব খাতা</title>
+
+  <meta name="theme-color" content="#173f35" />
+  <meta
+    name="description"
+    content="দৈনিক আয়, খরচ ও তারিখ অনুযায়ী হিসাব ব্যবস্থাপনা"
+  />
+
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- SheetJS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+
+  <style>
+
+    /* =========================================================
+       GLOBAL
+    ========================================================= */
+
+    :root {
+
+      --primary: #173f35;
+      --primary-dark: #103129;
+      --primary-light: #e8f1ed;
+
+      --gold: #b68a1d;
+      --gold-light: #f7efd7;
+
+      --income: #157347;
+      --income-bg: #e9f7ef;
+
+      --expense: #b42318;
+      --expense-bg: #fff0ee;
+
+      --text: #18211f;
+      --text-soft: #596561;
+      --muted: #7a8581;
+
+      --background: #eef3f0;
+      --card: #ffffff;
+      --border: #dfe7e3;
+
+      --shadow-sm:
+        0 2px 8px rgba(23, 63, 53, 0.06);
+
+      --shadow-md:
+        0 8px 24px rgba(23, 63, 53, 0.09);
+
+      --radius: 14px;
+    }
+
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+
+    body {
+
+      font-family:
+        "Noto Sans Bengali",
+        sans-serif;
+
+      background:
+        linear-gradient(
+          rgba(238, 243, 240, 0.96),
+          rgba(238, 243, 240, 0.96)
+        ),
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 31px,
+          rgba(23, 63, 53, 0.025) 32px
+        );
+
+      color: var(--text);
+
+      min-height: 100vh;
+
+      line-height: 1.55;
+    }
+
+
+    button,
+    input,
+    select,
+    textarea {
+      font-family: inherit;
+    }
+
+
+    button {
+      cursor: pointer;
+    }
+
+
+    .container {
+
+      width:
+        min(
+          1180px,
+          calc(100% - 32px)
+        );
+
+      margin: 0 auto;
+    }
+
+
+    /* =========================================================
+       HEADER
+    ========================================================= */
+
+    .top-header {
+
+      background: var(--primary);
+
+      color: #fff;
+
+      position: relative;
+
+      overflow: hidden;
+
+      border-bottom:
+        4px solid var(--gold);
+    }
+
+
+    .top-header::after {
+
+      content: "";
+
+      position: absolute;
+
+      inset:
+        auto 0 0 0;
+
+      height: 1px;
+
+      background:
+        rgba(255,255,255,0.15);
+    }
+
+
+    .header-inner {
+
+      min-height: 112px;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: space-between;
+
+      gap: 24px;
+
+      padding: 22px 0;
+    }
+
+
+    .brand {
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 15px;
+    }
+
+
+    .brand-icon {
+
+      width: 58px;
+      height: 58px;
+
+      flex: 0 0 58px;
+
+      border-radius: 13px;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      background:
+        rgba(255,255,255,0.1);
+
+      border:
+        1px solid rgba(255,255,255,0.18);
+
+      font-size: 29px;
+    }
+
+
+    .brand-text h1 {
+
+      font-size: 27px;
+
+      line-height: 1.25;
+
+      font-weight: 800;
+
+      letter-spacing: -0.3px;
+    }
+
+
+    .brand-text p {
+
+      margin-top: 4px;
+
+      font-size: 13px;
+
+      color:
+        rgba(255,255,255,0.75);
+
+      font-weight: 400;
+    }
+
+
+    .connection-status {
+
+      display: inline-flex;
+
+      align-items: center;
+
+      gap: 8px;
+
+      padding: 9px 14px;
+
+      border-radius: 999px;
+
+      background:
+        rgba(255,255,255,0.09);
+
+      border:
+        1px solid rgba(255,255,255,0.16);
+
+      font-size: 13px;
+
+      white-space: nowrap;
+    }
+
+
+    .status-dot {
+
+      width: 9px;
+      height: 9px;
+
+      border-radius: 50%;
+
+      background: #5ee09a;
+
+      box-shadow:
+        0 0 0 4px
+        rgba(94,224,154,0.12);
+    }
+
+
+    /* =========================================================
+       TABS
+    ========================================================= */
+
+    .tabs-area {
+      padding-top: 18px;
+    }
+
+
+    .tabs {
+
+      display: flex;
+
+      gap: 8px;
+
+      background: #fff;
+
+      padding: 6px;
+
+      border:
+        1px solid var(--border);
+
+      border-radius: 12px;
+
+      box-shadow: var(--shadow-sm);
+    }
+
+
+    .tab-btn {
+
+      flex: 1;
+
+      border: none;
+
+      background: transparent;
+
+      color: var(--text-soft);
+
+      min-height: 46px;
+
+      border-radius: 8px;
+
+      font-size: 15px;
+
+      font-weight: 700;
+
+      transition: 0.2s ease;
+    }
+
+
+    .tab-btn:hover {
+
+      background:
+        var(--primary-light);
+
+      color: var(--primary);
+    }
+
+
+    .tab-btn.active {
+
+      background:
+        var(--primary);
+
+      color: #fff;
+
+      box-shadow:
+        0 3px 8px
+        rgba(23,63,53,0.18);
+    }
+
+
+    /* =========================================================
+       MAIN
+    ========================================================= */
+
+    main {
+      padding: 18px 0 45px;
+    }
+
+
+    .tab-content {
+      display: none;
+    }
+
+
+    .tab-content.active {
+      display: block;
+    }
+
+
+    .section-card {
+
+      background: var(--card);
+
+      border:
+        1px solid var(--border);
+
+      border-radius: var(--radius);
+
+      box-shadow: var(--shadow-md);
+
+      overflow: hidden;
+
+      margin-bottom: 18px;
+    }
+
+
+    .card-header {
+
+      padding: 18px 20px;
+
+      border-bottom:
+        1px solid var(--border);
+
+      background:
+        linear-gradient(
+          90deg,
+          rgba(232,241,237,0.8),
+          rgba(255,255,255,1)
+        );
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: space-between;
+
+      gap: 15px;
+    }
+
+
+    .card-title-wrap {
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 11px;
+    }
+
+
+    .card-title-icon {
+
+      width: 38px;
+      height: 38px;
+
+      border-radius: 9px;
+
+      background:
+        var(--primary);
+
+      color: #fff;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      font-size: 18px;
+    }
+
+
+    .card-header h2 {
+
+      font-size: 18px;
+
+      font-weight: 800;
+
+      color:
+        var(--primary-dark);
+    }
+
+
+    .card-header p {
+
+      color: var(--muted);
+
+      font-size: 12px;
+
+      margin-top: 1px;
+    }
+
+
+    .card-body {
+      padding: 22px;
+    }
+
+
+    /* =========================================================
+       MESSAGE
+    ========================================================= */
+
+    #message {
+
+      display: none;
+
+      margin-bottom: 17px;
+
+      padding: 12px 14px;
+
+      border-radius: 9px;
+
+      font-size: 14px;
+
+      font-weight: 600;
+
+      border:
+        1px solid transparent;
+    }
+
+
+    #message.success {
+
+      display: block;
+
+      background:
+        var(--income-bg);
+
+      color:
+        var(--income);
+
+      border-color:
+        #c5e8d2;
+    }
+
+
+    #message.error {
+
+      display: block;
+
+      background:
+        var(--expense-bg);
+
+      color:
+        var(--expense);
+
+      border-color:
+        #f2c6c2;
+    }
+
+
+    /* =========================================================
+       FORM
+    ========================================================= */
+
+    .form-grid {
+
+      display: grid;
+
+      grid-template-columns:
+        repeat(
+          2,
+          minmax(0,1fr)
+        );
+
+      gap: 17px;
+    }
+
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+
+    .field label {
+
+      display: block;
+
+      margin-bottom: 7px;
+
+      font-size: 13px;
+
+      font-weight: 700;
+
+      color: #34413d;
+    }
+
+
+    .required {
+      color: var(--expense);
+    }
+
+
+    .input-wrap {
+      position: relative;
+    }
+
+
+    .input-wrap .field-icon {
+
+      position: absolute;
+
+      left: 13px;
+
+      top: 50%;
+
+      transform:
+        translateY(-50%);
+
+      color: #87938f;
+
+      font-size: 16px;
+
+      pointer-events: none;
+    }
+
+
+    input,
+    select,
+    textarea {
+
+      width: 100%;
+
+      border:
+        1px solid #d5dfdb;
+
+      background: #fff;
+
+      color: var(--text);
+
+      border-radius: 9px;
+
+      outline: none;
+
+      transition: 0.18s ease;
+
+      font-size: 14px;
+    }
+
+
+    input,
+    select {
+
+      height: 47px;
+
+      padding: 0 13px;
+    }
+
+
+    .input-wrap input {
+      padding-left: 40px;
+    }
+
+
+    textarea {
+
+      min-height: 95px;
+
+      padding: 12px 13px;
+
+      resize: vertical;
+    }
+
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+
+      border-color:
+        var(--primary);
+
+      box-shadow:
+        0 0 0 3px
+        rgba(23,63,53,0.08);
+    }
+
+
+    input::placeholder,
+    textarea::placeholder {
+
+      color: #a1aaa7;
+    }
+
+
+    /* =========================================================
+       ACCOUNT TYPE DROPDOWN
+    ========================================================= */
+
+    .select-wrap {
+      position: relative;
+    }
+
+
+    .select-wrap select {
+
+      appearance: none;
+
+      -webkit-appearance: none;
+
+      padding-right: 45px;
+
+      font-weight: 700;
+
+      color: var(--text);
+    }
+
+
+    .select-wrap::after {
+
+      content: "⌄";
+
+      position: absolute;
+
+      right: 15px;
+
+      top: 50%;
+
+      transform:
+        translateY(-55%);
+
+      color:
+        var(--primary);
+
+      font-size: 19px;
+
+      pointer-events: none;
+
+      font-weight: 800;
+    }
+
+
+    .select-placeholder {
+      color: #8b9692;
+    }
+
+
+    /* =========================================================
+       SAVE BUTTON
+    ========================================================= */
+
+    .form-actions {
+
+      margin-top: 20px;
+
+      display: flex;
+
+      justify-content: flex-end;
+    }
+
+
+    .save-btn {
+
+      min-width: 175px;
+
+      min-height: 48px;
+
+      border: none;
+
+      border-radius: 9px;
+
+      background:
+        var(--primary);
+
+      color: #fff;
+
+      font-size: 15px;
+
+      font-weight: 800;
+
+      padding: 0 22px;
+
+      box-shadow:
+        0 5px 12px
+        rgba(23,63,53,0.18);
+
+      transition: 0.2s ease;
+    }
+
+
+    .save-btn:hover {
+
+      background:
+        var(--primary-dark);
+
+      transform:
+        translateY(-1px);
+    }
+
+
+    .save-btn:disabled {
+
+      opacity: 0.65;
+
+      cursor: not-allowed;
+
+      transform: none;
+    }
+
+
+    /* =========================================================
+       SUMMARY
+    ========================================================= */
+
+    .summary-grid {
+
+      display: grid;
+
+      grid-template-columns:
+        repeat(
+          3,
+          minmax(0,1fr)
+        );
+
+      gap: 14px;
+    }
+
+
+    .summary-card {
+
+      background: #fff;
+
+      border:
+        1px solid var(--border);
+
+      border-radius: 12px;
+
+      padding: 17px 18px;
+
+      position: relative;
+
+      overflow: hidden;
+
+      box-shadow:
+        var(--shadow-sm);
+    }
+
+
+    .summary-card::before {
+
+      content: "";
+
+      position: absolute;
+
+      left: 0;
+
+      top: 0;
+
+      bottom: 0;
+
+      width: 4px;
+
+      background:
+        var(--primary);
+    }
+
+
+    .summary-card.income::before {
+      background: var(--income);
+    }
+
+
+    .summary-card.expense::before {
+      background: var(--expense);
+    }
+
+
+    .summary-card.balance::before {
+      background: var(--gold);
+    }
+
+
+    .summary-label {
+
+      color:
+        var(--text-soft);
+
+      font-size: 13px;
+
+      font-weight: 600;
+    }
+
+
+    .summary-value {
+
+      margin-top: 4px;
+
+      font-size: 24px;
+
+      font-weight: 800;
+
+      letter-spacing: -0.4px;
+    }
+
+
+    .summary-card.income
+    .summary-value {
+
+      color:
+        var(--income);
+    }
+
+
+    .summary-card.expense
+    .summary-value {
+
+      color:
+        var(--expense);
+    }
+
+
+    .summary-card.balance
+    .summary-value {
+
+      color:
+        var(--primary);
+    }
+
+
+    /* =========================================================
+       REPORT TOOLBAR
+    ========================================================= */
+
+    .report-toolbar {
+
+      display: grid;
+
+      grid-template-columns:
+        1fr 1fr auto;
+
+      align-items: end;
+
+      gap: 15px;
+
+      padding: 20px;
+
+      border-bottom:
+        1px solid var(--border);
+
+      background:
+        #fafcfb;
+    }
+
+
+    .date-field {
+
+      width: 100%;
+    }
+
+
+    .date-field label {
+
+      display: block;
+
+      font-size: 13px;
+
+      font-weight: 700;
+
+      margin-bottom: 7px;
+
+      color: #34413d;
+    }
+
+
+    .export-btn {
+
+      height: 45px;
+
+      border:
+        1px solid var(--primary);
+
+      background: #fff;
+
+      color:
+        var(--primary);
+
+      border-radius: 9px;
+
+      padding: 0 17px;
+
+      font-size: 14px;
+
+      font-weight: 800;
+
+      transition: 0.2s ease;
+
+      white-space: nowrap;
+    }
+
+
+    .export-btn:hover {
+
+      background:
+        var(--primary);
+
+      color: #fff;
+    }
+
+
+    /* =========================================================
+       REPORT RANGE LABEL
+    ========================================================= */
+
+    .report-range {
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 7px;
+
+      color:
+        var(--text-soft);
+
+      font-size: 12px;
+
+      font-weight: 600;
+
+      margin-bottom: 12px;
+    }
+
+
+    .report-range strong {
+
+      color:
+        var(--primary);
+
+      font-weight: 800;
+    }
+
+
+    /* =========================================================
+       TABLE
+    ========================================================= */
+
+    .table-wrapper {
+
+      width: 100%;
+
+      overflow-x: auto;
+
+      -webkit-overflow-scrolling: touch;
+    }
+
+
+    table {
+
+      width: 100%;
+
+      border-collapse: collapse;
+
+      min-width: 760px;
+    }
+
+
+    thead {
+
+      background:
+        var(--primary);
+
+      color: #fff;
+    }
+
+
+    th {
+
+      padding: 12px 13px;
+
+      text-align: left;
+
+      font-size: 12px;
+
+      font-weight: 700;
+
+      white-space: nowrap;
+    }
+
+
+    td {
+
+      padding: 12px 13px;
+
+      border-bottom:
+        1px solid #e8eeeb;
+
+      font-size: 13px;
+
+      color: #34413d;
+
+      vertical-align: middle;
+    }
+
+
+    tbody tr:hover {
+
+      background:
+        #f7faf8;
+    }
+
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+
+    .amount-cell {
+
+      text-align: right;
+
+      font-weight: 800;
+
+      white-space: nowrap;
+    }
+
+
+    .amount-income {
+      color: var(--income);
+    }
+
+
+    .amount-expense {
+      color: var(--expense);
+    }
+
+
+    .type-badge {
+
+      display: inline-flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      min-width: 55px;
+
+      padding: 4px 9px;
+
+      border-radius: 999px;
+
+      font-size: 11px;
+
+      font-weight: 800;
+    }
+
+
+    .type-badge.income {
+
+      color:
+        var(--income);
+
+      background:
+        var(--income-bg);
+    }
+
+
+    .type-badge.expense {
+
+      color:
+        var(--expense);
+
+      background:
+        var(--expense-bg);
+    }
+
+
+    .delete-btn {
+
+      border: none;
+
+      background:
+        #fff1ef;
+
+      color:
+        var(--expense);
+
+      border-radius: 7px;
+
+      min-width: 38px;
+
+      height: 34px;
+
+      font-size: 14px;
+
+      transition: 0.18s ease;
+    }
+
+
+    .delete-btn:hover {
+
+      background:
+        var(--expense);
+
+      color: #fff;
+    }
+
+
+    .empty-row {
+
+      text-align: center;
+
+      padding:
+        34px 15px !important;
+
+      color:
+        var(--muted);
+
+      font-size: 13px;
+    }
+
+
+    /* =========================================================
+       REPORT SUMMARY
+    ========================================================= */
+
+    .report-summary {
+
+      padding: 18px 20px;
+
+      border-bottom:
+        1px solid var(--border);
+    }
+
+
+    /* =========================================================
+       FOOTER
+    ========================================================= */
+
+    footer {
+
+      border-top:
+        1px solid var(--border);
+
+      background: #fff;
+
+      color:
+        var(--muted);
+
+      text-align: center;
+
+      padding: 18px 15px;
+
+      font-size: 12px;
+    }
+
+
+    footer strong {
+      color: var(--primary);
+    }
+
+
+    /* =========================================================
+       TABLET
+    ========================================================= */
+
+    @media (max-width: 900px) {
+
+      .header-inner {
+        min-height: auto;
+      }
+
+
+      .brand-text h1 {
+        font-size: 23px;
+      }
+
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+
+      .field.full {
+        grid-column: auto;
+      }
+
+
+      .report-toolbar {
+
+        grid-template-columns:
+          1fr 1fr;
+      }
+
+
+      .export-btn {
+
+        grid-column:
+          1 / -1;
+
+        width: 100%;
+      }
+
+    }
+
+
+    /* =========================================================
+       MOBILE
+    ========================================================= */
+
+    @media (max-width: 650px) {
+
+      .container {
+
+        width:
+          min(
+            100% - 20px,
+            1180px
+          );
+      }
+
+
+      .top-header {
+
+        border-bottom-width: 3px;
+      }
+
+
+      .header-inner {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 13px;
+
+        padding: 18px 0;
+      }
+
+
+      .brand {
+        width: 100%;
+      }
+
+
+      .brand-icon {
+
+        width: 50px;
+
+        height: 50px;
+
+        flex-basis: 50px;
+
+        font-size: 24px;
+      }
+
+
+      .brand-text h1 {
+        font-size: 21px;
+      }
+
+
+      .brand-text p {
+        font-size: 11px;
+      }
+
+
+      .connection-status {
+
+        font-size: 11px;
+
+        padding: 7px 11px;
+      }
+
+
+      .tabs-area {
+        padding-top: 11px;
+      }
+
+
+      .tabs {
+        padding: 4px;
+      }
+
+
+      .tab-btn {
+
+        min-height: 43px;
+
+        font-size: 13px;
+      }
+
+
+      main {
+        padding: 11px 0 30px;
+      }
+
+
+      .card-header {
+        padding: 15px;
+      }
+
+
+      .card-body {
+        padding: 15px;
+      }
+
+
+      .card-title-icon {
+
+        width: 34px;
+
+        height: 34px;
+
+        font-size: 15px;
+      }
+
+
+      .card-header h2 {
+        font-size: 16px;
+      }
+
+
+      .form-grid {
+        gap: 14px;
+      }
+
+
+      input,
+      select {
+
+        height: 48px;
+
+        font-size: 16px;
+      }
+
+
+      textarea {
+        font-size: 16px;
+      }
+
+
+      .form-actions {
+        justify-content: stretch;
+      }
+
+
+      .save-btn {
+
+        width: 100%;
+
+        min-height: 49px;
+      }
+
+
+      .summary-grid {
+
+        grid-template-columns: 1fr;
+
+        gap: 9px;
+      }
+
+
+      .summary-card {
+
+        padding:
+          13px 15px;
+      }
+
+
+      .summary-value {
+        font-size: 21px;
+      }
+
+
+      .report-toolbar {
+
+        grid-template-columns: 1fr;
+
+        padding: 15px;
+      }
+
+
+      .export-btn {
+
+        grid-column: auto;
+
+        width: 100%;
+      }
+
+
+      .report-summary {
+        padding: 14px 15px;
+      }
+
+
+      .report-range {
+
+        flex-wrap: wrap;
+
+        line-height: 1.7;
+      }
+
+
+      table {
+        min-width: 720px;
+      }
+
+
+      th,
+      td {
+
+        padding:
+          10px 9px;
+
+        font-size: 12px;
+      }
+
+
+      footer {
+
+        font-size: 11px;
+
+        padding:
+          15px 10px;
+      }
+
+    }
+
+
+    /* =========================================================
+       VERY SMALL DEVICES
+    ========================================================= */
+
+    @media (max-width: 380px) {
+
+      .brand-text h1 {
+        font-size: 19px;
+      }
+
+
+      .brand-text p {
+        font-size: 10px;
+      }
+
+
+      .tab-btn {
+        font-size: 12px;
+      }
+
+
+      .card-header h2 {
+        font-size: 15px;
+      }
+
+    }
+
+  </style>
+</head>
+
+
+<body>
+
+
+  <!-- =========================================================
+       HEADER
+  ========================================================= -->
+
+  <header class="top-header">
+
+    <div class="container header-inner">
+
+      <div class="brand">
+
+        <div class="brand-icon">
+          📒
+        </div>
+
+        <div class="brand-text">
+
+          <h1>
+            দৈনিক হিসাব খাতা
+          </h1>
+
+          <p>
+            আয় • ব্যয় • দৈনিক লেনদেন • তারিখ অনুযায়ী রিপোর্ট
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div class="connection-status">
+
+        <span class="status-dot"></span>
+
+        Google Sheet সংযুক্ত
+
+      </div>
+
+    </div>
+
+  </header>
+
+
+  <!-- =========================================================
+       TABS
+  ========================================================= -->
+
+  <div class="container tabs-area">
+
+    <div class="tabs">
+
+      <button
+        type="button"
+        id="tabNew"
+        class="tab-btn active"
+        onclick="showTab('new')"
+      >
+        ＋ নতুন হিসাব
+      </button>
+
+
+      <button
+        type="button"
+        id="tabReport"
+        class="tab-btn"
+        onclick="showTab('report')"
+      >
+        ▤ হিসাব রিপোর্ট
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================================================
+       MAIN
+  ========================================================= -->
+
+  <main>
+
+    <div class="container">
+
+
+      <!-- =====================================================
+           NEW ENTRY
+      ===================================================== -->
+
+      <section
+        id="newTab"
+        class="tab-content active"
+      >
+
+
+        <!-- NEW ENTRY CARD -->
+
+        <div class="section-card">
+
+          <div class="card-header">
+
+            <div class="card-title-wrap">
+
+              <div class="card-title-icon">
+                ✎
+              </div>
+
+              <div>
+
+                <h2>
+                  নতুন হিসাব এন্ট্রি
+                </h2>
+
+                <p>
+                  দৈনিক আয় অথবা খরচের তথ্য সংরক্ষণ করুন
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <div class="card-body">
+
+            <div id="message"></div>
+
+
+            <form
+              id="entryForm"
+              onsubmit="saveEntry(event)"
+            >
+
+
+              <div class="form-grid">
+
+
+                <!-- DATE -->
+
+                <div class="field">
+
+                  <label for="date">
+
+                    তারিখ
+                    <span class="required">*</span>
+
+                  </label>
+
+
+                  <div class="input-wrap">
+
+                    <span class="field-icon">
+                      📅
+                    </span>
+
+
+                    <input
+                      type="date"
+                      id="date"
+                      required
+                    />
+
+                  </div>
+
+                </div>
+
+
+                <!-- ACCOUNT TYPE -->
+
+                <div class="field">
+
+                  <label for="type">
+
+                    হিসাবের ধরন
+                    <span class="required">*</span>
+
+                  </label>
+
+
+                  <div class="select-wrap">
+
+                    <select
+                      id="type"
+                      onchange="setType(this.value)"
+                      required
+                    >
+
+                      <option
+                        value=""
+                        selected
+                        disabled
+                      >
+                        -- হিসাবের ধরন নির্বাচন করুন --
+                      </option>
+
+
+                      <option value="income">
+                        💰 আয়
+                      </option>
+
+
+                      <option value="expense">
+                        💸 খরচ
+                      </option>
+
+                    </select>
+
+                  </div>
+
+                </div>
+
+
+                <!-- DESCRIPTION -->
+
+                <div class="field full">
+
+                  <label for="description">
+
+                    বিবরণ
+                    <span class="required">*</span>
+
+                  </label>
+
+
+                  <div class="input-wrap">
+
+                    <span class="field-icon">
+                      📝
+                    </span>
+
+
+                    <input
+                      type="text"
+                      id="description"
+                      placeholder="যেমন: অফিস ভাড়া, বেতন, বিক্রয়, অন্যান্য আয়..."
+                      autocomplete="off"
+                      required
+                    />
+
+                  </div>
+
+                </div>
+
+
+                <!-- AMOUNT -->
+
+                <div class="field">
+
+                  <label for="amount">
+
+                    টাকার পরিমাণ
+                    <span class="required">*</span>
+
+                  </label>
+
+
+                  <div class="input-wrap">
+
+                    <span class="field-icon">
+                      ৳
+                    </span>
+
+
+                    <input
+                      type="number"
+                      id="amount"
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                      inputmode="decimal"
+                      required
+                    />
+
+                  </div>
+
+                </div>
+
+
+                <!-- REMARKS -->
+
+                <div class="field">
+
+                  <label for="remarks">
+                    মন্তব্য / Remarks
+                  </label>
+
+
+                  <input
+                    type="text"
+                    id="remarks"
+                    placeholder="প্রয়োজনে অতিরিক্ত তথ্য লিখুন"
+                    autocomplete="off"
+                  />
+
+                </div>
+
+              </div>
+
+
+              <div class="form-actions">
+
+                <button
+                  type="submit"
+                  id="saveBtn"
+                  class="save-btn"
+                >
+                  💾 হিসাব সংরক্ষণ করুন
+                </button>
+
+              </div>
+
+
+            </form>
+
+          </div>
+
+        </div>
+
+
+        <!-- ===================================================
+             TODAY SUMMARY
+        =================================================== -->
+
+        <div class="section-card">
+
+          <div class="card-header">
+
+            <div class="card-title-wrap">
+
+              <div class="card-title-icon">
+                📊
+              </div>
+
+
+              <div>
+
+                <h2>
+                  নির্বাচিত তারিখের হিসাব
+                </h2>
+
+                <p>
+                  নির্বাচিত তারিখের মোট আয়, খরচ ও ব্যালেন্স
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <div class="card-body">
+
+            <div class="summary-grid">
+
+
+              <div class="summary-card income">
+
+                <div class="summary-label">
+                  মোট আয়
+                </div>
+
+
+                <div
+                  class="summary-value"
+                  id="todayIncome"
+                >
+                  ৳ 0
+                </div>
+
+              </div>
+
+
+              <div class="summary-card expense">
+
+                <div class="summary-label">
+                  মোট খরচ
+                </div>
+
+
+                <div
+                  class="summary-value"
+                  id="todayExpense"
+                >
+                  ৳ 0
+                </div>
+
+              </div>
+
+
+              <div class="summary-card balance">
+
+                <div class="summary-label">
+                  ব্যালেন্স
+                </div>
+
+
+                <div
+                  class="summary-value"
+                  id="todayBalance"
+                >
+                  ৳ 0
+                </div>
+
+              </div>
+
+
+            </div>
+
+          </div>
+
+
+          <!-- TODAY TABLE -->
+
+          <div class="table-wrapper">
+
+            <table>
+
+              <thead>
+
+                <tr>
+
+                  <th>
+                    তারিখ
+                  </th>
+
+                  <th>
+                    বিবরণ
+                  </th>
+
+                  <th>
+                    ধরন
+                  </th>
+
+                  <th
+                    style="text-align:right;"
+                  >
+                    পরিমাণ
+                  </th>
+
+                  <th>
+                    মন্তব্য
+                  </th>
+
+                  <th
+                    style="text-align:center;"
+                  >
+                    অ্যাকশন
+                  </th>
+
+                </tr>
+
+              </thead>
+
+
+              <tbody id="todayBody"></tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- =====================================================
+           REPORT TAB
+      ===================================================== -->
+
+      <section
+        id="reportTab"
+        class="tab-content"
+      >
+
+
+        <div class="section-card">
+
+
+          <!-- REPORT HEADER -->
+
+          <div class="card-header">
+
+            <div class="card-title-wrap">
+
+              <div class="card-title-icon">
+                📑
+              </div>
+
+
+              <div>
+
+                <h2>
+                  তারিখ অনুযায়ী হিসাব রিপোর্ট
+                </h2>
+
+                <p>
+                  From Date থেকে To Date পর্যন্ত সম্পূর্ণ হিসাব
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <!-- REPORT FILTER -->
+
+          <div class="report-toolbar">
+
+
+            <!-- FROM DATE -->
+
+            <div class="date-field">
+
+              <label for="f-from">
+
+                From Date
+                <span class="required">*</span>
+
+              </label>
+
+
+              <input
+                type="date"
+                id="f-from"
+                onchange="renderReport()"
+              />
+
+            </div>
+
+
+            <!-- TO DATE -->
+
+            <div class="date-field">
+
+              <label for="f-to">
+
+                To Date
+                <span class="required">*</span>
+
+              </label>
+
+
+              <input
+                type="date"
+                id="f-to"
+                onchange="renderReport()"
+              />
+
+            </div>
+
+
+            <!-- EXPORT -->
+
+            <button
+              type="button"
+              class="export-btn"
+              onclick="exportExcel()"
+            >
+              ⬇ Excel এ ডাউনলোড
+            </button>
+
+
+          </div>
+
+
+          <!-- REPORT SUMMARY -->
+
+          <div class="report-summary">
+
+
+            <div class="report-range">
+
+              <span>
+                রিপোর্ট:
+              </span>
+
+              <strong id="reportFromText">
+                -
+              </strong>
+
+              <span>
+                থেকে
+              </span>
+
+              <strong id="reportToText">
+                -
+              </strong>
+
+            </div>
+
+
+            <div class="summary-grid">
+
+
+              <div class="summary-card income">
+
+                <div class="summary-label">
+                  মোট আয়
+                </div>
+
+
+                <div
+                  class="summary-value"
+                  id="reportIncome"
+                >
+                  ৳ 0
+                </div>
+
+              </div>
+
+
+              <div class="summary-card expense">
+
+                <div class="summary-label">
+                  মোট খরচ
+                </div>
+
+
+                <div
+                  class="summary-value"
+                  id="reportExpense"
+                >
+                  ৳ 0
+                </div>
+
+              </div>
+
+
+              <div class="summary-card balance">
+
+                <div class="summary-label">
+                  মোট ব্যালেন্স
+                </div>
+
+
+                <div
+                  class="summary-value"
+                  id="reportBalance"
+                >
+                  ৳ 0
+                </div>
+
+              </div>
+
+
+            </div>
+
+          </div>
+
+
+          <!-- REPORT TABLE -->
+
+          <div class="table-wrapper">
+
+            <table>
+
+              <thead>
+
+                <tr>
+
+                  <th>
+                    তারিখ
+                  </th>
+
+                  <th>
+                    বিবরণ
+                  </th>
+
+                  <th>
+                    হিসাবের ধরন
+                  </th>
+
+                  <th
+                    style="text-align:right;"
+                  >
+                    পরিমাণ
+                  </th>
+
+                  <th>
+                    মন্তব্য
+                  </th>
+
+                  <th
+                    style="text-align:center;"
+                  >
+                    অ্যাকশন
+                  </th>
+
+                </tr>
+
+              </thead>
+
+
+              <tbody id="reportBody"></tbody>
+
+            </table>
+
+          </div>
+
+
+        </div>
+
+      </section>
+
+    </div>
+
+  </main>
+
+
+  <!-- =========================================================
+       FOOTER
+  ========================================================= -->
+
+  <footer>
+
+    <strong>
+      দৈনিক হিসাব খাতা
+    </strong>
+
+    &nbsp;•&nbsp;
+
+    Google Sheet ভিত্তিক হিসাব ব্যবস্থাপনা
+
+  </footer>
+
+
+  <!-- =========================================================
+       JAVASCRIPT
+  ========================================================= -->
+
+  <script>
+
+
+    /* =========================================================
+       GOOGLE APPS SCRIPT URL
+       KEEP THIS URL UNCHANGED
+    ========================================================= */
+
+    const GOOGLE_SCRIPT_URL =
+      "https://script.google.com/macros/s/AKfycbxTrlmmd9_jPml23c_UEZc10V1PYIeJo3Jkdt2zXBvvXG-r70uyLL5cHdVA36uZ0IqapQ/exec";
+
+
+    /* =========================================================
+       GLOBAL VARIABLES
+    ========================================================= */
+
+    let entries = [];
+
+    let currentType = "";
+
+
+    /* =========================================================
+       PAGE LOAD
+    ========================================================= */
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      function () {
+
+
+        const today =
+          new Date();
+
+
+        const yyyy =
+          today.getFullYear();
+
+
+        const mm =
+          String(
+            today.getMonth() + 1
+          ).padStart(2, "0");
+
+
+        const dd =
+          String(
+            today.getDate()
+          ).padStart(2, "0");
+
+
+        const todayString =
+          `${yyyy}-${mm}-${dd}`;
+
+
+        /* Entry Date */
+
+        document.getElementById(
+          "date"
+        ).value =
+          todayString;
+
+
+        /* Report From Date */
+
+        document.getElementById(
+          "f-from"
+        ).value =
+          todayString;
+
+
+        /* Report To Date */
+
+        document.getElementById(
+          "f-to"
+        ).value =
+          todayString;
+
+
+        /* Account Type initially blank */
+
+        document.getElementById(
+          "type"
+        ).value = "";
+
+
+        currentType = "";
+
+
+        loadData();
+
+      }
+    );
+
+
+    /* =========================================================
+       LOAD DATA
+    ========================================================= */
+
+    async function loadData() {
+
+
+      try {
+
+
+        const response =
+          await fetch(
+            GOOGLE_SCRIPT_URL +
+            "?action=getAll"
+          );
+
+
+        const result =
+          await response.json();
+
+
+        if (!result.success) {
+
+          throw new Error(
+            result.message ||
+            "Data load failed"
+          );
+
+        }
+
+
+        entries =
+          Array.isArray(
+            result.data
+          )
+            ? result.data
+            : [];
+
+
+        renderToday();
+
+        renderReport();
+
+
+      } catch (error) {
+
+
+        console.error(
+          "Load Error:",
+          error
+        );
+
+
+        showMessage(
+          "ডাটা লোড করতে সমস্যা হয়েছে। Google Sheet/API চেক করুন।",
+          "error"
+        );
+
+      }
+
+    }
+
+
+    /* =========================================================
+       SET ACCOUNT TYPE
+    ========================================================= */
+
+    function setType(type) {
+
+
+      const normalized =
+        String(type || "")
+          .trim()
+          .toLowerCase();
+
+
+      if (
+        normalized === "income" ||
+        normalized === "expense"
+      ) {
+
+        currentType =
+          normalized;
+
+      } else {
+
+        currentType = "";
+
+      }
+
+    }
+
+
+    /* =========================================================
+       SAVE ENTRY
+    ========================================================= */
+
+    async function saveEntry(event) {
+
+
+      event.preventDefault();
+
+
+      const date =
+        document
+          .getElementById("date")
+          .value
+          .trim();
+
+
+      const description =
+        document
+          .getElementById("description")
+          .value
+          .trim();
+
+
+      const amount =
+        parseFloat(
+          document
+            .getElementById("amount")
+            .value
+        );
+
+
+      const remarks =
+        document
+          .getElementById("remarks")
+          .value
+          .trim();
+
+
+      const selectedType =
+        document
+          .getElementById("type")
+          .value;
+
+
+      const type =
+        String(
+          selectedType ||
+          currentType ||
+          ""
+        )
+          .trim()
+          .toLowerCase();
+
+
+      /* =====================================================
+         VALIDATION
+      ===================================================== */
+
+
+      if (!date) {
+
+        showMessage(
+          "তারিখ নির্বাচন করুন।",
+          "error"
+        );
+
+        document
+          .getElementById("date")
+          .focus();
+
+        return;
+
+      }
+
+
+      if (
+        type !== "income" &&
+        type !== "expense"
+      ) {
+
+
+        showMessage(
+          "দয়া করে হিসাবের ধরন নির্বাচন করুন — আয় অথবা খরচ।",
+          "error"
+        );
+
+
+        document
+          .getElementById("type")
+          .focus();
+
+
+        return;
+
+      }
+
+
+      if (!description) {
+
+        showMessage(
+          "বিবরণ লিখুন।",
+          "error"
+        );
+
+        document
+          .getElementById("description")
+          .focus();
+
+        return;
+
+      }
+
+
+      if (
+        isNaN(amount) ||
+        amount <= 0
+      ) {
+
+        showMessage(
+          "সঠিক টাকার পরিমাণ লিখুন।",
+          "error"
+        );
+
+        document
+          .getElementById("amount")
+          .focus();
+
+        return;
+
+      }
+
+
+      /* =====================================================
+         SAVE BUTTON
+      ===================================================== */
+
+      const saveBtn =
+        document.getElementById(
+          "saveBtn"
+        );
+
+
+      saveBtn.disabled = true;
+
+
+      saveBtn.innerHTML =
+        "⏳ সংরক্ষণ হচ্ছে...";
+
+
+      try {
+
+
+        const response =
+          await fetch(
+            GOOGLE_SCRIPT_URL,
+            {
+
+              method: "POST",
+
+              headers: {
+
+                "Content-Type":
+                  "text/plain;charset=utf-8"
+
+              },
+
+
+              body:
+                JSON.stringify({
+
+                  action: "save",
+
+                  date: date,
+
+                  type: type,
+
+                  description:
+                    description,
+
+                  amount: amount,
+
+                  remarks: remarks
+
+                })
+
+            }
+          );
+
+
+        const result =
+          await response.json();
+
+
+        if (!result.success) {
+
+          throw new Error(
+            result.message ||
+            "Save failed"
+          );
+
+        }
+
+
+        showMessage(
+          "হিসাব সফলভাবে সংরক্ষণ হয়েছে।",
+          "success"
+        );
+
+
+        /* Clear fields */
+
+        document
+          .getElementById(
+            "description"
+          )
+          .value = "";
+
+
+        document
+          .getElementById(
+            "amount"
+          )
+          .value = "";
+
+
+        document
+          .getElementById(
+            "remarks"
+          )
+          .value = "";
+
+
+        /*
+          Type আবার blank করা হচ্ছে,
+          যাতে পরের Entry-তে অবশ্যই
+          নতুন করে আয়/খরচ নির্বাচন করতে হয়।
+        */
+
+        currentType = "";
+
+
+        document
+          .getElementById(
+            "type"
+          )
+          .value = "";
+
+
+        /* Reload data */
+
+        await loadData();
+
+
+      } catch (error) {
+
+
+        console.error(
+          "Save Error:",
+          error
+        );
+
+
+        showMessage(
+          error.message ||
+          "হিসাব সংরক্ষণ করতে সমস্যা হয়েছে।",
+          "error"
+        );
+
+
+      } finally {
+
+
+        saveBtn.disabled =
+          false;
+
+
+        saveBtn.innerHTML =
+          "💾 হিসাব সংরক্ষণ করুন";
+
+      }
+
+    }
+
+
+    /* =========================================================
+       DELETE ENTRY
+    ========================================================= */
+
+    async function deleteEntry(id) {
+
+
+      if (!id) {
+        return;
+      }
+
+
+      const confirmed =
+        confirm(
+          "আপনি কি এই হিসাবটি মুছে ফেলতে চান?"
+        );
+
+
+      if (!confirmed) {
+        return;
+      }
+
+
+      try {
+
+
+        const response =
+          await fetch(
+            GOOGLE_SCRIPT_URL,
+            {
+
+              method: "POST",
+
+              headers: {
+
+                "Content-Type":
+                  "text/plain;charset=utf-8"
+
+              },
+
+
+              body:
+                JSON.stringify({
+
+                  action: "delete",
+
+                  id: id
+
+                })
+
+            }
+          );
+
+
+        const result =
+          await response.json();
+
+
+        if (!result.success) {
+
+          throw new Error(
+            result.message ||
+            "Delete failed"
+          );
+
+        }
+
+
+        showMessage(
+          "হিসাব সফলভাবে মুছে ফেলা হয়েছে।",
+          "success"
+        );
+
+
+        await loadData();
+
+
+      } catch (error) {
+
+
+        console.error(
+          "Delete Error:",
+          error
+        );
+
+
+        showMessage(
+          error.message ||
+          "হিসাব মুছতে সমস্যা হয়েছে।",
+          "error"
+        );
+
+      }
+
+    }
+
+
+    /* =========================================================
+       RENDER TODAY
+    ========================================================= */
+
+    function renderToday() {
+
+
+      const selectedDate =
+        document
+          .getElementById("date")
+          .value;
+
+
+      const todayEntries =
+        entries.filter(
+          function (item) {
+
+
+            return String(
+              item.Date ??
+              item.date ??
+              ""
+            )
+              .substring(0, 10)
+              === selectedDate;
+
+
+          }
+        );
+
+
+      let income = 0;
+
+      let expense = 0;
+
+
+      todayEntries.forEach(
+        function (item) {
+
+
+          const amount =
+            parseFloat(
+              item.Amount ??
+              item.amount ??
+              0
+            ) || 0;
+
+
+          const type =
+            String(
+              item.Type ??
+              item.type ??
+              ""
+            )
+              .trim()
+              .toLowerCase();
+
+
+          if (
+            type === "income"
+          ) {
+
+            income += amount;
+
+          }
+
+
+          else if (
+            type === "expense"
+          ) {
+
+            expense += amount;
+
+          }
+
+
+        }
+      );
+
+
+      const balance =
+        income - expense;
+
+
+      document
+        .getElementById(
+          "todayIncome"
+        )
+        .textContent =
+        "৳ " +
+        formatMoney(income);
+
+
+      document
+        .getElementById(
+          "todayExpense"
+        )
+        .textContent =
+        "৳ " +
+        formatMoney(expense);
+
+
+      document
+        .getElementById(
+          "todayBalance"
+        )
+        .textContent =
+        "৳ " +
+        formatMoney(balance);
+
+
+      const tbody =
+        document.getElementById(
+          "todayBody"
+        );
+
+
+      tbody.innerHTML = "";
+
+
+      if (
+        todayEntries.length === 0
+      ) {
+
+
+        tbody.innerHTML = `
+
+          <tr>
+
+            <td
+              colspan="6"
+              class="empty-row"
+            >
+
+              এই তারিখে কোনো হিসাব পাওয়া যায়নি।
+
+            </td>
+
+          </tr>
+
+        `;
+
+
+        return;
+
+      }
+
+
+      todayEntries
+        .slice()
+        .sort(
+          function (a, b) {
+
+
+            const aId =
+              Number(
+                a.Id ??
+                a.id ??
+                0
+              );
+
+
+            const bId =
+              Number(
+                b.Id ??
+                b.id ??
+                0
+              );
+
+
+            return bId - aId;
+
+          }
+        )
+        .forEach(
+          function (item) {
+
+
+            tbody.appendChild(
+              createTableRow(item)
+            );
+
+          }
+        );
+
+    }
+
+
+    /* =========================================================
+       RENDER DATE RANGE REPORT
+    ========================================================= */
+
+    function renderReport() {
+
+
+      const fromDate =
+        document
+          .getElementById(
+            "f-from"
+          )
+          .value;
+
+
+      const toDate =
+        document
+          .getElementById(
+            "f-to"
+          )
+          .value;
+
+
+      const fromText =
+        document.getElementById(
+          "reportFromText"
+        );
+
+
+      const toText =
+        document.getElementById(
+          "reportToText"
+        );
+
+
+      fromText.textContent =
+        fromDate
+          ? formatDate(fromDate)
+          : "-";
+
+
+      toText.textContent =
+        toDate
+          ? formatDate(toDate)
+          : "-";
+
+
+      const tbody =
+        document.getElementById(
+          "reportBody"
+        );
+
+
+      tbody.innerHTML = "";
+
+
+      /* No date */
+
+      if (
+        !fromDate ||
+        !toDate
+      ) {
+
+
+        document.getElementById(
+          "reportIncome"
+        ).textContent = "৳ 0";
+
+
+        document.getElementById(
+          "reportExpense"
+        ).textContent = "৳ 0";
+
+
+        document.getElementById(
+          "reportBalance"
+        ).textContent = "৳ 0";
+
+
+        tbody.innerHTML = `
+
+          <tr>
+
+            <td
+              colspan="6"
+              class="empty-row"
+            >
+
+              From Date এবং To Date নির্বাচন করুন।
+
+            </td>
+
+          </tr>
+
+        `;
+
+
+        return;
+
+      }
+
+
+      /* Invalid range */
+
+      if (
+        fromDate > toDate
+      ) {
+
+
+        document.getElementById(
+          "reportIncome"
+        ).textContent = "৳ 0";
+
+
+        document.getElementById(
+          "reportExpense"
+        ).textContent = "৳ 0";
+
+
+        document.getElementById(
+          "reportBalance"
+        ).textContent = "৳ 0";
+
+
+        tbody.innerHTML = `
+
+          <tr>
+
+            <td
+              colspan="6"
+              class="empty-row"
+            >
+
+              From Date অবশ্যই To Date-এর সমান অথবা আগের তারিখ হতে হবে।
+
+            </td>
+
+          </tr>
+
+        `;
+
+
+        return;
+
+      }
+
+
+      /* =====================================================
+         FILTER
+      ===================================================== */
+
+      const rangeEntries =
+        entries.filter(
+          function (item) {
+
+
+            const date =
+              String(
+                item.Date ??
+                item.date ??
+                ""
+              )
+                .substring(0, 10);
+
+
+            return (
+              date >= fromDate &&
+              date <= toDate
+            );
+
+          }
+        );
+
+
+      let income = 0;
+
+      let expense = 0;
+
+
+      rangeEntries.forEach(
+        function (item) {
+
+
+          const amount =
+            parseFloat(
+              item.Amount ??
+              item.amount ??
+              0
+            ) || 0;
+
+
+          const type =
+            String(
+              item.Type ??
+              item.type ??
+              ""
+            )
+              .trim()
+              .toLowerCase();
+
+
+          if (
+            type === "income"
+          ) {
+
+            income += amount;
+
+          }
+
+
+          else if (
+            type === "expense"
+          ) {
+
+            expense += amount;
+
+          }
+
+        }
+      );
+
+
+      const balance =
+        income - expense;
+
+
+      /* Summary */
+
+      document.getElementById(
+        "reportIncome"
+      ).textContent =
+        "৳ " +
+        formatMoney(income);
+
+
+      document.getElementById(
+        "reportExpense"
+      ).textContent =
+        "৳ " +
+        formatMoney(expense);
+
+
+      document.getElementById(
+        "reportBalance"
+      ).textContent =
+        "৳ " +
+        formatMoney(balance);
+
+
+      /* No data */
+
+      if (
+        rangeEntries.length === 0
+      ) {
+
+
+        tbody.innerHTML = `
+
+          <tr>
+
+            <td
+              colspan="6"
+              class="empty-row"
+            >
+
+              নির্বাচিত তারিখের মধ্যে কোনো হিসাব পাওয়া যায়নি।
+
+            </td>
+
+          </tr>
+
+        `;
+
+
+        return;
+
+      }
+
+
+      /* =====================================================
+         SORT
+      ===================================================== */
+
+      rangeEntries
+        .slice()
+        .sort(
+          function (a, b) {
+
+
+            const dateA =
+              String(
+                a.Date ??
+                a.date ??
+                ""
+              );
+
+
+            const dateB =
+              String(
+                b.Date ??
+                b.date ??
+                ""
+              );
+
+
+            if (
+              dateA !== dateB
+            ) {
+
+              return dateB
+                .localeCompare(
+                  dateA
+                );
+
+            }
+
+
+            const idA =
+              Number(
+                a.Id ??
+                a.id ??
+                0
+              );
+
+
+            const idB =
+              Number(
+                b.Id ??
+                b.id ??
+                0
+              );
+
+
+            return idB - idA;
+
+          }
+        )
+        .forEach(
+          function (item) {
+
+
+            tbody.appendChild(
+              createTableRow(item)
+            );
+
+          }
+        );
+
+    }
+
+
+    /* =========================================================
+       CREATE TABLE ROW
+    ========================================================= */
+
+    function createTableRow(item) {
+
+
+      const tr =
+        document.createElement(
+          "tr"
+        );
+
+
+      const id =
+        item.Id ??
+        item.id ??
+        "";
+
+
+      const date =
+        item.Date ??
+        item.date ??
+        "";
+
+
+      const description =
+        item.Description ??
+        item.description ??
+        "";
+
+
+      const type =
+        String(
+          item.Type ??
+          item.type ??
+          ""
+        )
+          .trim()
+          .toLowerCase();
+
+
+      const amount =
+        parseFloat(
+          item.Amount ??
+          item.amount ??
+          0
+        ) || 0;
+
+
+      const remarks =
+        item.Remarks ??
+        item.remarks ??
+        "";
+
+
+      const typeText =
+        type === "income"
+          ? "আয়"
+          : "খরচ";
+
+
+      const amountClass =
+        type === "income"
+          ? "amount-income"
+          : "amount-expense";
+
+
+      const sign =
+        type === "income"
+          ? "+"
+          : "-";
+
+
+      const badgeClass =
+        type === "income"
+          ? "income"
+          : "expense";
+
+
+      tr.innerHTML = `
+
+        <td>
+          ${escapeHtml(
+            formatDate(date)
+          )}
+        </td>
+
+
+        <td>
+
+          <strong>
+            ${escapeHtml(
+              description
+            )}
+          </strong>
+
+        </td>
+
+
+        <td>
+
+          <span
+            class="type-badge ${badgeClass}"
+          >
+            ${typeText}
+          </span>
+
+        </td>
+
+
+        <td
+          class="amount-cell ${amountClass}"
+        >
+
+          ${sign}
+          ৳
+          ${formatMoney(amount)}
+
+        </td>
+
+
+        <td>
+
+          ${escapeHtml(
+            remarks || "-"
+          )}
+
+        </td>
+
+
+        <td
+          style="text-align:center;"
+        >
+
+          <button
+            type="button"
+            class="delete-btn"
+            onclick="deleteEntry('${escapeHtml(
+              String(id)
+            )}')"
+            title="হিসাব মুছে ফেলুন"
+          >
+
+            🗑
+
+          </button>
+
+        </td>
+
+      `;
+
+
+      return tr;
+
+    }
+
+
+    /* =========================================================
+       SHOW TAB
+    ========================================================= */
+
+    function showTab(tab) {
+
+
+      const newTab =
+        document.getElementById(
+          "newTab"
+        );
+
+
+      const reportTab =
+        document.getElementById(
+          "reportTab"
+        );
+
+
+      const tabNew =
+        document.getElementById(
+          "tabNew"
+        );
+
+
+      const tabReport =
+        document.getElementById(
+          "tabReport"
+        );
+
+
+      if (
+        tab === "new"
+      ) {
+
+
+        newTab.classList.add(
+          "active"
+        );
+
+
+        reportTab.classList.remove(
+          "active"
+        );
+
+
+        tabNew.classList.add(
+          "active"
+        );
+
+
+        tabReport.classList.remove(
+          "active"
+        );
+
+
+        renderToday();
+
+
+      } else {
+
+
+        newTab.classList.remove(
+          "active"
+        );
+
+
+        reportTab.classList.add(
+          "active"
+        );
+
+
+        tabNew.classList.remove(
+          "active"
+        );
+
+
+        tabReport.classList.add(
+          "active"
+        );
+
+
+        renderReport();
+
+      }
+
+    }
+
+
+    /* =========================================================
+       EXPORT EXCEL - DATE RANGE
+    ========================================================= */
+
+    function exportExcel() {
+
+
+      const fromDate =
+        document
+          .getElementById(
+            "f-from"
+          )
+          .value;
+
+
+      const toDate =
+        document
+          .getElementById(
+            "f-to"
+          )
+          .value;
+
+
+      /* Validation */
+
+      if (
+        !fromDate ||
+        !toDate
+      ) {
+
+
+        showMessage(
+          "Excel ডাউনলোডের জন্য From Date এবং To Date নির্বাচন করুন।",
+          "error"
+        );
+
+
+        return;
+
+      }
+
+
+      if (
+        fromDate > toDate
+      ) {
+
+
+        showMessage(
+          "From Date অবশ্যই To Date-এর সমান অথবা আগের তারিখ হতে হবে।",
+          "error"
+        );
+
+
+        return;
+
+      }
+
+
+      /* Filter */
+
+      const rangeEntries =
+        entries.filter(
+          function (item) {
+
+
+            const date =
+              String(
+                item.Date ??
+                item.date ??
+                ""
+              )
+                .substring(0, 10);
+
+
+            return (
+              date >= fromDate &&
+              date <= toDate
+            );
+
+          }
+        );
+
+
+      if (
+        rangeEntries.length === 0
+      ) {
+
+
+        showMessage(
+          "নির্বাচিত তারিখের মধ্যে Excel ডাউনলোড করার মতো কোনো ডাটা নেই।",
+          "error"
+        );
+
+
+        return;
+
+      }
+
+
+      /* =====================================================
+         EXCEL DATA
+      ===================================================== */
+
+      const data =
+        rangeEntries
+          .slice()
+          .sort(
+            function (a, b) {
+
+
+              const dateA =
+                String(
+                  a.Date ??
+                  a.date ??
+                  ""
+                );
+
+
+              const dateB =
+                String(
+                  b.Date ??
+                  b.date ??
+                  ""
+                );
+
+
+              return dateA.localeCompare(
+                dateB
+              );
+
+            }
+          )
+          .map(
+            function (item) {
+
+
+              const type =
+                String(
+                  item.Type ??
+                  item.type ??
+                  ""
+                )
+                  .trim()
+                  .toLowerCase();
+
+
+              return {
+
+
+                "তারিখ":
+                  item.Date ??
+                  item.date ??
+                  "",
+
+
+                "বিবরণ":
+                  item.Description ??
+                  item.description ??
+                  "",
+
+
+                "হিসাবের ধরন":
+                  type === "income"
+                    ? "আয়"
+                    : "খরচ",
+
+
+                "পরিমাণ":
+                  parseFloat(
+                    item.Amount ??
+                    item.amount ??
+                    0
+                  ) || 0,
+
+
+                "মন্তব্য":
+                  item.Remarks ??
+                  item.remarks ??
+                  "",
+
+
+                "Entry ID":
+                  item.Id ??
+                  item.id ??
+                  ""
+
+              };
+
+            }
+          );
+
+
+      /* =====================================================
+         CREATE WORKSHEET
+      ===================================================== */
+
+      const worksheet =
+        XLSX.utils.json_to_sheet(
+          data
+        );
+
+
+      worksheet["!cols"] = [
+
+        { wch: 14 },
+
+        { wch: 32 },
+
+        { wch: 18 },
+
+        { wch: 16 },
+
+        { wch: 35 },
+
+        { wch: 12 }
+
+      ];
+
+
+      const workbook =
+        XLSX.utils.book_new();
+
+
+      XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        "হিসাব"
+      );
+
+
+      /* =====================================================
+         FILE NAME
+      ===================================================== */
+
+      const fileName =
+        `Daily_Hisab_${fromDate}_to_${toDate}.xlsx`;
+
+
+      XLSX.writeFile(
+        workbook,
+        fileName
+      );
+
+
+    }
+
+
+    /* =========================================================
+       FORMAT MONEY
+    ========================================================= */
+
+    function formatMoney(value) {
+
+
+      const number =
+        Number(value) || 0;
+
+
+      return number.toLocaleString(
+        "en-US",
+        {
+
+          minimumFractionDigits: 0,
+
+          maximumFractionDigits: 2
+
+        }
+      );
+
+    }
+
+
+    /* =========================================================
+       FORMAT DATE
+    ========================================================= */
+
+    function formatDate(value) {
+
+
+      if (!value) {
+        return "";
+      }
+
+
+      const str =
+        String(value);
+
+
+      if (
+        /^\d{4}-\d{2}-\d{2}/
+          .test(str)
+      ) {
+
+
+        const parts =
+          str
+            .substring(0, 10)
+            .split("-");
+
+
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+
+      }
+
+
+      return str;
+
+    }
+
+
+    /* =========================================================
+       MESSAGE
+    ========================================================= */
+
+    function showMessage(
+      text,
+      type = "success"
+    ) {
+
+
+      const message =
+        document.getElementById(
+          "message"
+        );
+
+
+      message.textContent =
+        text;
+
+
+      message.className =
+        type;
+
+
+      message.style.display =
+        "block";
+
+
+      clearTimeout(
+        window.messageTimer
+      );
+
+
+      window.messageTimer =
+        setTimeout(
+          function () {
+
+
+            message.style.display =
+              "none";
+
+
+          },
+          4000
+        );
+
+    }
+
+
+    /* =========================================================
+       ESCAPE HTML
+    ========================================================= */
+
+    function escapeHtml(value) {
+
+
+      return String(
+        value ?? ""
+      )
+
+        .replace(
+          /&/g,
+          "&amp;"
+        )
+
+        .replace(
+          /</g,
+          "&lt;"
+        )
+
+        .replace(
+          />/g,
+          "&gt;"
+        )
+
+        .replace(
+          /"/g,
+          "&quot;"
+        )
+
+        .replace(
+          /'/g,
+          "&#039;"
+        );
+
+    }
+
+
+    /* =========================================================
+       DATE CHANGE
+    ========================================================= */
+
+    document
+      .getElementById("date")
+      .addEventListener(
+        "change",
+        function () {
+
+          renderToday();
+
+        }
+      );
+
+
+  </script>
+
+</body>
+</html>
+
